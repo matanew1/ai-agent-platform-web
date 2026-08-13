@@ -4,6 +4,7 @@ import { Trash2 } from "lucide-react";
 import { rangePercentage } from "../../models/range";
 import type { ModelCatalog } from "../../models/types";
 import type { Agent, AgentChanges, Tool } from "../types";
+import { useI18n } from "../../../shared/i18n/I18nProvider";
 
 type AgentConfigPanelProps = {
   agent: Agent;
@@ -16,6 +17,7 @@ type AgentConfigPanelProps = {
 };
 
 export function AgentConfigPanel({ agent, tools, saving, modelCatalog, loadingModels, onSave, onDelete }: AgentConfigPanelProps) {
+  const { t } = useI18n();
   const [prompt, setPrompt] = useState(agent.system_prompt);
   const [allowedTools, setAllowedTools] = useState(agent.allowed_tools);
   const [model, setModel] = useState(agent.model || modelCatalog.default_model);
@@ -66,17 +68,17 @@ export function AgentConfigPanel({ agent, tools, saving, modelCatalog, loadingMo
   return (
     <div className="inspector-content">
       <div className="field-label">
-        <label>System prompt</label>
-        <button className={`save-state ${changed ? "unsaved" : ""}`} type="button" title={changed ? "Save configuration" : "Configuration saved"} disabled={!changed || saving || loadingModels || allowedTools.length === 0} onClick={save}>
-          {saving ? "saving…" : changed ? "unsaved" : "saved"}
+        <label>{t("systemPrompt")}</label>
+        <button className={`save-state ${changed ? "unsaved" : ""}`} type="button" title={changed ? t("saveConfiguration") : t("configurationSaved")} disabled={!changed || saving || loadingModels || allowedTools.length === 0} onClick={save}>
+          {saving ? t("saving") : changed ? t("unsaved") : t("saved")}
         </button>
       </div>
       <textarea className="prompt-editor" value={prompt} maxLength={8000} disabled={saving} onChange={(event) => setPrompt(event.target.value)} />
-      <div className="prompt-meta"><span>applies to next message</span><span>{prompt.length} / 8000</span></div>
+      <div className="prompt-meta"><span>{t("appliesNextMessage")}</span><span>{prompt.length} / 8000</span></div>
       <div className="config-block model-block">
         <div className="field-label">
-          <label htmlFor="agent-model">Model</label>
-          <span className="model-provider">{loadingModels ? "loading…" : modelCatalog.provider}</span>
+          <label htmlFor="agent-model">{t("model")}</label>
+          <span className="model-provider">{loadingModels ? t("loading") : modelCatalog.provider}</span>
         </div>
         <div className="model-select-wrap">
           <select
@@ -92,10 +94,10 @@ export function AgentConfigPanel({ agent, tools, saving, modelCatalog, loadingMo
           <span aria-hidden="true">⌄</span>
         </div>
         {!loadingModels && !hasSelectableModels && (
-          <p className="panel-footnote warning">No chat-capable models are installed for this provider.</p>
+          <p className="panel-footnote warning">{t("noProviderModels")}</p>
         )}
         <label className="temperature-control" htmlFor="agent-temperature">
-          <span>temp</span>
+          <span>{t("temperature")}</span>
           <input
             id="agent-temperature"
             type="range"
@@ -110,7 +112,7 @@ export function AgentConfigPanel({ agent, tools, saving, modelCatalog, loadingMo
           <output>{temperature.toFixed(1)}</output>
         </label>
       </div>
-      <div className="field-label tool-heading"><label>Allowed tools</label></div>
+      <div className="field-label tool-heading"><label>{t("allowedTools")}</label></div>
       <div className="tool-list">
         {tools.map((tool) => {
           const enabled = allowedTools.includes(tool.name);
@@ -129,8 +131,8 @@ export function AgentConfigPanel({ agent, tools, saving, modelCatalog, loadingMo
           );
         })}
       </div>
-      {allowedTools.length === 0 && <p className="panel-footnote warning">Select at least one tool. The backend currently treats an empty list as "allow all."</p>}
-      <button className="danger inspector-delete" onClick={onDelete}><Trash2 size={13} /> Delete agent</button>
+      {allowedTools.length === 0 && <p className="panel-footnote warning">{t("selectTool")}</p>}
+      <button className="danger inspector-delete" onClick={onDelete}><Trash2 size={13} /> {t("deleteAgent")}</button>
     </div>
   );
 }

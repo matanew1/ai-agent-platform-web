@@ -8,6 +8,7 @@ import type { Agent, CreateAgentValues } from "../features/agents/types";
 import { SessionsDashboard } from "../features/chat/components/SessionsDashboard";
 import { useChatSessions } from "../features/chat/hooks/useChatSessions";
 import { DocumentsDashboard } from "../features/documents/components/DocumentsDashboard";
+import { SettingsDashboard } from "../features/settings/components/SettingsDashboard";
 import { useDocuments } from "../features/documents/hooks/useDocuments";
 import { useModelCatalog } from "../features/models/hooks/useModelCatalog";
 import type { AuthenticatedUser } from "../features/auth/types";
@@ -16,8 +17,10 @@ import type { DashboardDestination } from "../components/layout/DashboardSidebar
 import { getErrorMessage } from "../shared/lib/errors";
 import { LoadingScreen } from "../shared/ui/LoadingScreen";
 import { Notice } from "../shared/ui/Notice";
+import { useAppSettings } from "../shared/hooks/useAppSettings";
+import { I18nProvider } from "../shared/i18n/I18nProvider";
 
-type View = "dashboard" | "workspace" | "sessions" | "documents" | "tools";
+type View = "dashboard" | "workspace" | "sessions" | "documents" | "tools" | "settings";
 type InspectorTab = "config" | "documents" | "traces";
 
 type Route = { view: View; agentSlug: string | null };
@@ -31,6 +34,7 @@ export default function App({ currentUser, onSignOut }: AppProps) {
   const [route, setRoute] = useState<Route>(readRoute);
   const [workspaceTab, setWorkspaceTab] = useState<InspectorTab>("config");
   const [showCreate, setShowCreate] = useState(false);
+  const settingsState = useAppSettings(currentUser.id);
   const agentsState = useAgents(currentUser.id);
   const modelsState = useModelCatalog();
   const agentIds = useMemo(() => agentsState.agents.map((agent) => agent.id), [agentsState.agents]);
@@ -42,9 +46,10 @@ export default function App({ currentUser, onSignOut }: AppProps) {
   );
   const documents = useDocuments(currentUser.id, agentsState.setError);
   const identity = useMemo(() => ({
+    id: currentUser.id,
     displayName: currentUser.displayName,
     email: currentUser.email,
-  }), [currentUser.displayName, currentUser.email]);
+  }), [currentUser.id, currentUser.displayName, currentUser.email]);
 
   const stats = useMemo(() => ({
     agents: agentsState.agents.length,
@@ -114,6 +119,7 @@ export default function App({ currentUser, onSignOut }: AppProps) {
   };
 
   return (
+    <I18nProvider locale={settingsState.settings.locale}>
     <main className="app-shell">
       {agentsState.error && <Notice message={agentsState.error} onDismiss={() => agentsState.setError(null)} />}
       {agentsState.loading ? (
@@ -146,6 +152,8 @@ export default function App({ currentUser, onSignOut }: AppProps) {
           onDeleteDocument={documents.remove}
           onError={agentsState.setError}
           onDocumentsIndexed={documents.addIndexed}
+          showSources={settingsState.settings.showSources}
+          showToolActivity={settingsState.settings.showToolActivity}
           onDashboard={openDashboard}
           onSignOut={onSignOut}
           initialTab={workspaceTab}
@@ -185,6 +193,16 @@ export default function App({ currentUser, onSignOut }: AppProps) {
           onSignOut={onSignOut}
           onNavigate={navigateDashboard}
         />
+      ) : route.view === "settings" ? (
+        <SettingsDashboard
+          identity={identity}
+          connected={agentsState.connected}
+          settings={settingsState.settings}
+          onChange={settingsState.setSettings}
+          onReset={settingsState.reset}
+          onSignOut={onSignOut}
+          onNavigate={navigateDashboard}
+        />
       ) : (
         <Dashboard
           identity={identity}
@@ -213,6 +231,7 @@ export default function App({ currentUser, onSignOut }: AppProps) {
         />
       )}
     </main>
+    </I18nProvider>
   );
 }
 
@@ -228,7 +247,7 @@ function readRoute(): Route {
   const match = window.location.pathname.match(/^\/agents\/([^/]+)\/?$/);
   if (match) return { view: "workspace", agentSlug: decodeURIComponent(match[1]) };
   const view = window.location.pathname.replace(/^\/+|\/+$/g, "");
-  if (view === "sessions" || view === "documents" || view === "tools") {
+  if (view === "sessions" || view === "documents" || view === "tools" || view === "settings") {
     return { view, agentSlug: null };
   }
   return { view: "dashboard", agentSlug: null };

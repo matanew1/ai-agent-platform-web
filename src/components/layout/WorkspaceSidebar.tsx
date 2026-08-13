@@ -3,6 +3,9 @@ import type { Agent } from "../../features/agents/types";
 import type { Session } from "../../features/chat/types";
 import { Avatar } from "../../shared/ui/Avatar";
 import { Brand } from "../../shared/ui/Brand";
+import { APP_VERSION } from "../../shared/config/version";
+import { useI18n } from "../../shared/i18n/I18nProvider";
+import { AccountAvatar } from "../../shared/ui/AccountAvatar";
 import type { WorkspaceIdentity } from "./DashboardSidebar";
 
 type WorkspaceSidebarProps = {
@@ -21,15 +24,17 @@ type WorkspaceSidebarProps = {
 };
 
 export function WorkspaceSidebar(props: WorkspaceSidebarProps) {
+  const { t } = useI18n();
   return (
     <aside className="sidebar">
       <div className="sidebar-head">
         <button className="sidebar-workspace" type="button" onClick={props.onDashboard}>
           <Brand />
+          <small className="app-version">AI Platform v{APP_VERSION}</small>
         </button>
-        <button className="icon-button" onClick={props.onCreateAgent} aria-label="Create agent"><Plus size={18} /></button>
+        <button className="icon-button" onClick={props.onCreateAgent} aria-label={t("newAgent")}><Plus size={18} /></button>
       </div>
-      <p className="eyebrow label">Agents</p>
+      <p className="eyebrow label">{t("agents")}</p>
       <nav className="agent-list">
         {props.agents.map((agent, index) => (
           <button key={agent.id} className={agent.id === props.selectedAgentId ? "active" : ""} onClick={() => props.onSelectAgent(agent)}>
@@ -40,7 +45,7 @@ export function WorkspaceSidebar(props: WorkspaceSidebarProps) {
         ))}
       </nav>
       <div className="sessions-head">
-        <p className="eyebrow">Sessions · {props.agents.find((agent) => agent.id === props.selectedAgentId)?.name}</p>
+        <p className="eyebrow">{t("sessions")} · {props.agents.find((agent) => agent.id === props.selectedAgentId)?.name}</p>
       </div>
       <nav className="session-list">
         {props.sessions.map((session) => (
@@ -54,7 +59,7 @@ export function WorkspaceSidebar(props: WorkspaceSidebarProps) {
               className="session-delete"
               disabled={props.deletingSessionId === session.id}
               onClick={() => props.onDeleteSession(session.id)}
-              title="Delete session"
+              title={t("deleteSession")}
               type="button"
             >
               <Trash2 size={14} />
@@ -63,8 +68,9 @@ export function WorkspaceSidebar(props: WorkspaceSidebarProps) {
         ))}
       </nav>
       <div className="workspace-sidebar-account">
+        <AccountAvatar name={props.identity.displayName} userId={props.identity.id} compact />
         <span><strong>{props.identity.displayName}</strong><small>{props.identity.email}</small></span>
-        {props.onSignOut && <button type="button" onClick={props.onSignOut}>Sign out</button>}
+        {props.onSignOut && <button type="button" onClick={props.onSignOut}>{t("signOut")}</button>}
       </div>
     </aside>
   );

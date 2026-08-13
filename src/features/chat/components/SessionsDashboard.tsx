@@ -6,6 +6,7 @@ import { ManagementPage } from "../../../components/layout/ManagementPage";
 import { Avatar } from "../../../shared/ui/Avatar";
 import type { Agent } from "../../agents/types";
 import type { Session } from "../types";
+import { useI18n } from "../../../shared/i18n/I18nProvider";
 
 type SessionsDashboardProps = {
   identity: WorkspaceIdentity;
@@ -34,6 +35,7 @@ export function SessionsDashboard({
   onNewSession,
   onDeleteSession,
 }: SessionsDashboardProps) {
+  const { t, locale } = useI18n();
   const [query, setQuery] = useState("");
   const [newSessionAgentId, setNewSessionAgentId] = useState(agents[0]?.id || "");
 
@@ -57,11 +59,11 @@ export function SessionsDashboard({
 
   const selectedAgent = agents.find((agent) => agent.id === newSessionAgentId) || null;
   const summary = loading
-    ? "Loading retained conversations…"
-    : `${entries.length} ${entries.length === 1 ? "session" : "sessions"} across ${agents.length} ${agents.length === 1 ? "agent" : "agents"}`;
+    ? t("loadingSessions")
+    : t("sessionCount", { sessions: String(entries.length), agents: String(agents.length) });
 
   const requestDelete = (agentId: string, session: Session) => {
-    if (window.confirm(`Delete "${session.title}" and its retained history?`)) {
+    if (window.confirm(t("deleteSessionConfirm", { name: session.title }))) {
       onDeleteSession(agentId, session.id);
     }
   };
@@ -71,7 +73,7 @@ export function SessionsDashboard({
       identity={identity}
       connected={connected}
       activeDestination="sessions"
-      title="Sessions"
+      title={t("sessions")}
       summary={summary}
       onSignOut={onSignOut}
       onNavigate={onNavigate}
@@ -80,17 +82,17 @@ export function SessionsDashboard({
           <input
             value={query}
             onChange={(event) => setQuery(event.target.value)}
-            aria-label="Search sessions"
-            placeholder="Search sessions"
+            aria-label={t("searchSessions")}
+            placeholder={t("searchSessions")}
           />
           <select
             className="management-select"
-            aria-label="Agent for new session"
+            aria-label={t("agentForSession")}
             value={newSessionAgentId}
             disabled={!agents.length}
             onChange={(event) => setNewSessionAgentId(event.target.value)}
           >
-            {!agents.length && <option value="">No agents</option>}
+            {!agents.length && <option value="">{t("noAgents")}</option>}
             {agents.map((agent) => <option key={agent.id} value={agent.id}>{agent.name}</option>)}
           </select>
           <button
@@ -99,7 +101,7 @@ export function SessionsDashboard({
             disabled={!selectedAgent}
             onClick={() => selectedAgent && onNewSession(selectedAgent)}
           >
-            <MessageSquarePlus size={15} /> New session
+            <MessageSquarePlus size={15} /> {t("newSession")}
           </button>
         </>
       )}
@@ -119,7 +121,7 @@ export function SessionsDashboard({
           </div>
         </div>
       ) : visibleEntries.length ? (
-        <div className="management-list" aria-label="Sessions">
+        <div className="management-list" aria-label={t("sessions")}>
           {visibleEntries.map(({ agent, agentIndex, session }) => (
             <article
               className="management-row session-management-row"
@@ -129,10 +131,10 @@ export function SessionsDashboard({
                 <Avatar name={agent.name} small tone={agentIndex} />
                 <span className="management-row-copy">
                   <strong>{session.title}</strong>
-                  <small>{agent.name} · {session.messages.length} {session.messages.length === 1 ? "message" : "messages"}</small>
+                  <small>{agent.name} · {session.messages.length} {t(session.messages.length === 1 ? "message" : "messages")}</small>
                 </span>
                 <span className="management-row-side">
-                  <time dateTime={new Date(session.updatedAt).toISOString()}>{formatUpdatedAt(session.updatedAt)}</time>
+                  <time dateTime={new Date(session.updatedAt).toISOString()}>{formatUpdatedAt(session.updatedAt, locale, t)}</time>
                   <ChevronRight size={18} />
                 </span>
               </button>
@@ -140,10 +142,10 @@ export function SessionsDashboard({
                 className="row-action danger"
                 type="button"
                 disabled={deletingSession === `${agent.id}:${session.id}`}
-                aria-label={`Delete ${session.title}`}
+                aria-label={t("deleteSession", { name: session.title })}
                 onClick={() => requestDelete(agent.id, session)}
               >
-                {deletingSession === `${agent.id}:${session.id}` ? "Deleting…" : <Trash2 size={14} />}
+                {deletingSession === `${agent.id}:${session.id}` ? t("deleting") : <Trash2 size={14} />}
               </button>
             </article>
           ))}
@@ -151,19 +153,19 @@ export function SessionsDashboard({
       ) : (
         <div className="management-empty">
           <span className="empty-mark"><MessageSquarePlus size={20} /></span>
-          <h2>{query ? "No matching sessions" : "No sessions yet"}</h2>
-          <p>{query ? "Try a different session or agent name." : "Start a conversation with an agent and it will appear here."}</p>
-          {!query && selectedAgent && <button className="primary" type="button" onClick={() => onNewSession(selectedAgent)}>Start a session</button>}
+          <h2>{query ? t("noMatchingSessions") : t("noSessions")}</h2>
+          <p>{query ? t("tryDifferentSession") : t("sessionHint")}</p>
+          {!query && selectedAgent && <button className="primary" type="button" onClick={() => onNewSession(selectedAgent)}>{t("startSession")}</button>}
         </div>
       )}
     </ManagementPage>
   );
 }
 
-function formatUpdatedAt(updatedAt: number) {
+function formatUpdatedAt(updatedAt: number, locale: string, t: ReturnType<typeof useI18n>["t"]) {
   const elapsed = Math.max(0, Date.now() - updatedAt);
-  if (elapsed < 60_000) return "now";
-  if (elapsed < 3_600_000) return `${Math.floor(elapsed / 60_000)}m ago`;
-  if (elapsed < 86_400_000) return `${Math.floor(elapsed / 3_600_000)}h ago`;
-  return new Date(updatedAt).toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" });
+  if (elapsed < 60_000) return t("now");
+  if (elapsed < 3_600_000) return t("agoMinutes", { count: String(Math.floor(elapsed / 60_000)) });
+  if (elapsed < 86_400_000) return t("agoHours", { count: String(Math.floor(elapsed / 3_600_000)) });
+  return new Date(updatedAt).toLocaleDateString(locale, { month: "short", day: "numeric", year: "numeric" });
 }

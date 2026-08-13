@@ -5,6 +5,7 @@ import { DEFAULT_PROMPT } from "../../../shared/config/constants";
 import { rangePercentage } from "../../models/range";
 import type { ModelCatalog } from "../../models/types";
 import type { CreateAgentValues, Tool } from "../types";
+import { useI18n } from "../../../shared/i18n/I18nProvider";
 
 type CreateAgentModalProps = {
   tools: Tool[];
@@ -15,6 +16,7 @@ type CreateAgentModalProps = {
 };
 
 export function CreateAgentModal({ tools, modelCatalog, loadingModels, onClose, onCreate }: CreateAgentModalProps) {
+  const { t } = useI18n();
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
   const [prompt, setPrompt] = useState(DEFAULT_PROMPT);
@@ -58,14 +60,14 @@ export function CreateAgentModal({ tools, modelCatalog, loadingModels, onClose, 
   return (
     <div className="modal-backdrop" role="presentation" onMouseDown={(event) => event.target === event.currentTarget && onClose()}>
       <form className="modal" role="dialog" aria-modal="true" aria-labelledby="create-agent-title" onSubmit={submit}>
-        <button type="button" className="close" onClick={onClose} aria-label="Close"><X size={20} /></button>
-        <p className="eyebrow">New agent</p>
-        <h2 id="create-agent-title">Give your agent a role.</h2>
-        <label>Name<input autoFocus value={name} maxLength={100} onChange={(event) => setName(event.target.value)} placeholder="e.g. Research Scout" required /></label>
-        <label>Short description<input value={description} maxLength={500} onChange={(event) => setDescription(event.target.value)} placeholder="What this agent is responsible for" /></label>
+        <button type="button" className="close" onClick={onClose} aria-label={t("close")}><X size={20} /></button>
+        <p className="eyebrow">{t("newAgent")}</p>
+        <h2 id="create-agent-title">{t("newAgentTitle")}</h2>
+        <label>{t("name")}<input autoFocus value={name} maxLength={100} onChange={(event) => setName(event.target.value)} placeholder={t("namePlaceholder")} required /></label>
+        <label>{t("shortDescription")}<input value={description} maxLength={500} onChange={(event) => setDescription(event.target.value)} placeholder={t("descriptionPlaceholder")} /></label>
         <div className="modal-runtime-grid">
           <label htmlFor="create-agent-model">
-            <span className="modal-field-heading"><span>Model</span><span className="model-provider">{loadingModels ? "loading…" : modelCatalog.provider}</span></span>
+            <span className="modal-field-heading"><span>{t("model")}</span><span className="model-provider">{loadingModels ? t("loading") : modelCatalog.provider}</span></span>
             <span className="model-select-wrap">
               <select
                 id="create-agent-model"
@@ -75,13 +77,13 @@ export function CreateAgentModal({ tools, modelCatalog, loadingModels, onClose, 
               >
                 {hasSelectableModels ? modelCatalog.models.map((option) => (
                   <option key={option.id} value={option.id}>{option.label}</option>
-                )) : <option value="">No chat models installed</option>}
+                )) : <option value="">{t("noChatModels")}</option>}
               </select>
               <span aria-hidden="true">⌄</span>
             </span>
           </label>
           <label htmlFor="create-agent-temperature">
-            Temperature
+            {t("temperature")}
             <span className="modal-temperature-control">
               <input
                 id="create-agent-temperature"
@@ -99,10 +101,10 @@ export function CreateAgentModal({ tools, modelCatalog, loadingModels, onClose, 
           </label>
         </div>
         {!loadingModels && !hasSelectableModels && (
-          <p className="panel-footnote warning">Install a chat-capable model before creating an agent.</p>
+          <p className="panel-footnote warning">{t("installChatModel")}</p>
         )}
-        <label>System prompt<textarea value={prompt} maxLength={8000} onChange={(event) => setPrompt(event.target.value)} required /></label>
-        <button className="primary wide" disabled={saving || loadingModels || !hasSelectableModels}>{saving ? "Creating…" : loadingModels ? "Loading models…" : "Create agent"}</button>
+        <label>{t("systemPrompt")}<textarea value={prompt} maxLength={8000} onChange={(event) => setPrompt(event.target.value)} required /></label>
+        <button className="primary wide" disabled={saving || loadingModels || !hasSelectableModels}>{saving ? t("creating") : loadingModels ? t("loading") : t("createAgent")}</button>
       </form>
     </div>
   );

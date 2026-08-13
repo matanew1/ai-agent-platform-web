@@ -5,6 +5,7 @@ import { DEFAULT_MODEL } from "../../../shared/config/constants";
 import { Avatar } from "../../../shared/ui/Avatar";
 import type { Session } from "../types";
 import { AssistantMessageContent } from "./AssistantMessageContent";
+import { useI18n } from "../../../shared/i18n/I18nProvider";
 
 type ChatPaneProps = {
   agent: { name: string; model?: string | null };
@@ -17,10 +18,13 @@ type ChatPaneProps = {
   onFiles: (files: File[]) => void;
   onSubmit: (event: FormEvent) => void;
   onNewSession: () => void;
+  showSources: boolean;
+  showToolActivity: boolean;
 };
 
 export function ChatPane(props: ChatPaneProps) {
-  const { agent, session, draft, files, streaming, uploadRef, onDraft, onFiles, onSubmit, onNewSession } = props;
+  const { t } = useI18n();
+  const { agent, session, draft, files, streaming, uploadRef, onDraft, onFiles, onSubmit, onNewSession, showSources, showToolActivity } = props;
   const messagesRef = useRef<HTMLDivElement>(null);
   const [actionsOpen, setActionsOpen] = useState(false);
   const [copiedMessageId, setCopiedMessageId] = useState<string | null>(null);
@@ -36,36 +40,36 @@ export function ChatPane(props: ChatPaneProps) {
   return (
     <section className="chat-pane">
       <header className="chat-head">
-        <div><h2>{session?.title || "New conversation"}</h2><p>{agent.name} · {session?.id.slice(0, 6) || "new"} · {agent.model || DEFAULT_MODEL}</p></div>
+        <div><h2>{session?.title || t("newSession")}</h2><p>{agent.name} · {session?.id.slice(0, 6) || t("new")} · {agent.model || DEFAULT_MODEL}</p></div>
         <div className="chat-actions">
-          <button className="secondary" type="button" onClick={() => window.print()}><Printer size={14} /> Export</button>
-          <button className="secondary" type="button" onClick={onNewSession}><SquarePen size={14} /> New session</button>
+          <button className="secondary" type="button" onClick={() => window.print()}><Printer size={14} /> {t("export")}</button>
+          <button className="secondary" type="button" onClick={onNewSession}><SquarePen size={14} /> {t("newSession")}</button>
         </div>
       </header>
       <div className="messages" ref={messagesRef}>
         {!session?.messages.length && (
           <div className="empty-conversation">
             <Avatar name={agent.name} />
-            <h3>Start a conversation with {agent.name}</h3>
-            <p>Attach a document for this answer or add one to the shared library in the inspector.</p>
+            <h3>{t("startConversation", { agent: agent.name })}</h3>
+            <p>{t("attachDocument")}</p>
           </div>
         )}
         {session?.messages.map((message) => (
           <article className={`message ${message.role}`} key={message.id}>
             {message.role === "assistant" && <Avatar name={agent.name} small />}
             <div className="message-body">
-              {message.role === "assistant" && message.meta && (
+              {message.role === "assistant" && message.meta && showToolActivity && (
                 <div className="message-activity">
-                  <div className="meta-row" aria-label="Tools used">
-                    <small>Tools</small>
+                  <div className="meta-row" aria-label={t("toolsUsed")}>
+                    <small>{t("toolsUsed")}</small>
                     {message.meta.tools.length > 0
                       ? message.meta.tools.map((tool) => <span className="active" key={tool}>{tool}</span>)
-                      : <span>None</span>}
+                      : <span>{t("none")}</span>}
                   </div>
                   {message.meta.chunks > 0 && (
-                    <div className="meta-row" aria-label="Retrieved context">
-                      <small>Retrieved</small>
-                      <span className="active">{message.meta.chunks} {message.meta.chunks === 1 ? "chunk" : "chunks"}{message.meta.prepSeconds ? ` · ${formatDuration(message.meta.prepSeconds)}` : ""}</span>
+                    <div className="meta-row" aria-label={t("retrievedContext")}>
+                      <small>{t("retrieved")}</small>
+                      <span className="active">{message.meta.chunks} {t(message.meta.chunks === 1 ? "chunk" : "chunks")}{message.meta.prepSeconds ? ` · ${formatDuration(message.meta.prepSeconds)}` : ""}</span>
                     </div>
                   )}
                 </div>
@@ -73,10 +77,10 @@ export function ChatPane(props: ChatPaneProps) {
               <div className="bubble">
                 {message.content ? (
                   message.role === "assistant" ? (
-                    <AssistantMessageContent content={message.content} references={message.meta?.artifacts} sources={message.meta?.sources} />
+                    <AssistantMessageContent content={message.content} references={message.meta?.artifacts} sources={showSources ? message.meta?.sources : []} />
                   ) : message.content
                 ) : (
-                  <span className="typing">Thinking<span>.</span><span>.</span><span>.</span></span>
+                  <span className="typing">{t("thinking")}<span>.</span><span>.</span><span>.</span></span>
                 )}
                 {!!message.files?.length && (
                   <div className="attachment-row">
@@ -88,7 +92,7 @@ export function ChatPane(props: ChatPaneProps) {
                 <button
                   className="message-copy"
                   type="button"
-                  aria-label="Copy message"
+                  aria-label={t("copyMessage")}
                   onClick={() => {
                     void navigator.clipboard.writeText(message.content).then(() => {
                       setCopiedMessageId(message.id);
@@ -97,15 +101,15 @@ export function ChatPane(props: ChatPaneProps) {
                   }}
                 >
                   {copiedMessageId === message.id ? <Check size={13} /> : <Copy size={13} />}
-                  {copiedMessageId === message.id ? "Copied" : "Copy"}
+                  {copiedMessageId === message.id ? t("copied") : t("copy")}
                 </button>
               )}
               {message.role === "assistant" && (
                 <div className="message-status">
-                  <span>{streaming && message === session?.messages.at(-1) ? "streaming" : "complete"}</span>
+                  <span>{streaming && message === session?.messages.at(-1) ? t("streaming") : t("complete")}</span>
                   {streaming && message === session?.messages.at(-1) && <i><b /><b /><b /></i>}
-                  {!!message.content && <span>{estimateTokens(message.content).toLocaleString()} tok</span>}
-                  {!!message.content && <span>stop</span>}
+                  {!!message.content && <span>{estimateTokens(message.content).toLocaleString()} {t("tokenShort")}</span>}
+                  {!!message.content && <span>{t("stop")}</span>}
                 </div>
               )}
             </div>
@@ -140,7 +144,7 @@ export function ChatPane(props: ChatPaneProps) {
               <button
                 type="button"
                 className="attach"
-                aria-label="More message actions"
+                aria-label={t("moreMessageActions")}
                 aria-expanded={actionsOpen}
                 onClick={() => setActionsOpen((open) => !open)}
               >
@@ -152,7 +156,7 @@ export function ChatPane(props: ChatPaneProps) {
                     setActionsOpen(false);
                     uploadRef.current?.click();
                   }}>
-                    <Paperclip size={13} /> Attach files
+                    <Paperclip size={13} /> {t("attachFiles")}
                   </button>
                 </div>
               )}
@@ -161,7 +165,7 @@ export function ChatPane(props: ChatPaneProps) {
               rows={1}
               value={draft}
               onChange={(event) => onDraft(event.target.value)}
-              placeholder={`Message ${agent.name}`}
+              placeholder={t("messageAgent", { agent: agent.name })}
               onKeyDown={(event) => {
                 if (event.key === "Enter" && !event.shiftKey) {
                   event.preventDefault();
@@ -170,13 +174,13 @@ export function ChatPane(props: ChatPaneProps) {
               }}
             />
             <div className="composer-actions">
-              <button className="send" disabled={!session || !draft.trim() || streaming} aria-label="Send message">
+              <button className="send" disabled={!session || !draft.trim() || streaming} aria-label={t("sendMessage")}>
                 <ArrowUp size={16} />
               </button>
             </div>
           </div>
         </div>
-        <div className="composer-shortcuts"><span>⇧⏎ newline</span><span>⌘K switch agent</span><span>⌘U upload</span></div>
+        <div className="composer-shortcuts"><span>⇧⏎ {t("newline")}</span><span>⌘K {t("switchAgent")}</span><span>⌘U {t("upload")}</span></div>
       </form>
     </section>
   );

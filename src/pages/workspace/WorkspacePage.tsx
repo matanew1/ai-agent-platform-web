@@ -12,6 +12,7 @@ import type { IndexedChatDocument } from "../../features/chat/types";
 import { DocumentsPanel } from "../../features/documents/components/DocumentsPanel";
 import type { IndexedDocument } from "../../features/documents/types";
 import type { ModelCatalog } from "../../features/models/types";
+import { useI18n } from "../../shared/i18n/I18nProvider";
 
 type WorkspacePageProps = {
   initialTab: "config" | "documents" | "traces";
@@ -41,11 +42,14 @@ type WorkspacePageProps = {
   onDeleteDocument: (sourceId: string) => void;
   onError: (message: string | null) => void;
   onDocumentsIndexed: (documents: IndexedChatDocument[]) => void;
+  showSources: boolean;
+  showToolActivity: boolean;
   onDashboard: () => void;
   onSignOut?: () => void;
 };
 
 export function WorkspacePage(props: WorkspacePageProps) {
+  const { t } = useI18n();
   const [tab, setTab] = useState<"config" | "documents" | "traces">(props.initialTab);
   const [saving, setSaving] = useState(false);
   const attachmentRef = useRef<HTMLInputElement>(null);
@@ -88,13 +92,13 @@ export function WorkspacePage(props: WorkspacePageProps) {
   };
 
   const deleteAgent = async () => {
-    if (!window.confirm(`Delete ${props.agent.name}? This cannot be undone.`)) return;
+    if (!window.confirm(`${t("deleteAgent")} ${props.agent.name}?`)) return;
     await props.onDeleteAgent(props.agent.id);
   };
 
   const deleteSession = (sessionId: string) => {
     const session = props.sessions.find((candidate) => candidate.id === sessionId);
-    if (!session || !window.confirm(`Delete “${session.title}”? This cannot be undone.`)) return;
+    if (!session || !window.confirm(t("deleteSessionConfirm", { name: session.title }))) return;
     void props.onDeleteSession(sessionId);
   };
 
@@ -125,12 +129,14 @@ export function WorkspacePage(props: WorkspacePageProps) {
         onFiles={chat.setFiles}
         onSubmit={chat.send}
         onNewSession={props.onNewSession}
+        showSources={props.showSources}
+        showToolActivity={props.showToolActivity}
       />
       <aside className="inspector">
-        <nav className="inspector-tabs" role="tablist" aria-label="Agent inspector">
-          <button id="config-tab" role="tab" aria-selected={tab === "config"} aria-controls="config-panel" className={tab === "config" ? "active" : ""} onClick={() => setTab("config")}>Configuration</button>
-          <button id="documents-tab" role="tab" aria-selected={tab === "documents"} aria-controls="documents-panel" className={tab === "documents" ? "active" : ""} onClick={() => setTab("documents")}>Documents</button>
-          <button id="traces-tab" role="tab" aria-selected={tab === "traces"} aria-controls="traces-panel" className={tab === "traces" ? "active" : ""} onClick={() => setTab("traces")}>Traces</button>
+        <nav className="inspector-tabs" role="tablist" aria-label={t("configuration")}>
+          <button id="config-tab" role="tab" aria-selected={tab === "config"} aria-controls="config-panel" className={tab === "config" ? "active" : ""} onClick={() => setTab("config")}>{t("configuration")}</button>
+          <button id="documents-tab" role="tab" aria-selected={tab === "documents"} aria-controls="documents-panel" className={tab === "documents" ? "active" : ""} onClick={() => setTab("documents")}>{t("documents")}</button>
+          <button id="traces-tab" role="tab" aria-selected={tab === "traces"} aria-controls="traces-panel" className={tab === "traces" ? "active" : ""} onClick={() => setTab("traces")}>{t("traces")}</button>
         </nav>
         {tab === "config" && (
           <div className="inspector-panel" id="config-panel" role="tabpanel" aria-labelledby="config-tab">
@@ -166,16 +172,17 @@ export function WorkspacePage(props: WorkspacePageProps) {
 }
 
 function TracesPanel({ session }: { session: Session | null }) {
+  const { t } = useI18n();
   const assistantMessages = session?.messages.filter((message) => message.role === "assistant") || [];
   return (
     <div className="inspector-content traces-panel">
-      <p className="inspector-kicker">Current session</p>
+      <p className="inspector-kicker">{t("currentSession")}</p>
       {assistantMessages.length === 0 ? (
-        <div className="trace-empty"><span><Activity size={24} /></span><h3>No traces yet</h3><p>Tool calls and retrieval activity appear here after an agent responds.</p></div>
+        <div className="trace-empty"><span><Activity size={24} /></span><h3>{t("noTraces")}</h3><p>{t("traceHint")}</p></div>
       ) : assistantMessages.map((message, index) => (
         <div className="trace-row" key={message.id}>
           <i />
-          <div><strong>Assistant turn {index + 1}</strong><span>{message.meta?.tools.length || 0} tools · {message.meta?.chunks || 0} chunks</span></div>
+          <div><strong>{t("assistantTurn", { number: String(index + 1) })}</strong><span>{message.meta?.tools.length || 0} {t("tools")} · {message.meta?.chunks || 0} {t("chunks")}</span></div>
         </div>
       ))}
     </div>

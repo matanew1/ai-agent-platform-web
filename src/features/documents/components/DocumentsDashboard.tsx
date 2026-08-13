@@ -4,6 +4,7 @@ import { FileUp, Trash2, Upload } from "lucide-react";
 import { type DashboardDestination, type WorkspaceIdentity } from "../../../components/layout/DashboardSidebar";
 import { ManagementPage } from "../../../components/layout/ManagementPage";
 import { documentDisplayName, type IndexedDocument } from "../types";
+import { useI18n } from "../../../shared/i18n/I18nProvider";
 
 type DocumentsDashboardProps = {
   identity: WorkspaceIdentity;
@@ -30,6 +31,7 @@ export function DocumentsDashboard({
   onUpload,
   onDelete,
 }: DocumentsDashboardProps) {
+  const { t } = useI18n();
   const [query, setQuery] = useState("");
   const inputRef = useRef<HTMLInputElement>(null);
   const visibleDocuments = useMemo(() => {
@@ -38,11 +40,11 @@ export function DocumentsDashboard({
   }, [documents, query]);
   const totalChunks = documents.reduce((total, document) => total + document.chunks, 0);
   const summary = loading
-    ? "Loading the workspace library…"
-    : `${documents.length} ${documents.length === 1 ? "document" : "documents"} · ${totalChunks} indexed chunks`;
+    ? t("loadingLibrary")
+    : `${documents.length} ${t("documents")} · ${totalChunks} ${t("indexed")} ${t("chunks")}`;
 
   const requestDelete = (sourceId: string) => {
-    if (window.confirm(`Delete "${documentDisplayName(sourceId)}" from the shared document library?`)) onDelete(sourceId);
+    if (window.confirm(t("deleteDocumentConfirm", { name: documentDisplayName(sourceId) }))) onDelete(sourceId);
   };
 
   return (
@@ -50,7 +52,7 @@ export function DocumentsDashboard({
       identity={identity}
       connected={connected}
       activeDestination="documents"
-      title="Documents"
+      title={t("documents")}
       summary={summary}
       onSignOut={onSignOut}
       onNavigate={onNavigate}
@@ -59,12 +61,12 @@ export function DocumentsDashboard({
           <input
             value={query}
             onChange={(event) => setQuery(event.target.value)}
-            aria-label="Search documents"
-            placeholder="Search documents"
+            aria-label={t("searchDocuments")}
+            placeholder={t("searchDocuments")}
           />
           <input ref={inputRef} type="file" accept=".txt,.pdf,.docx" hidden onChange={onUpload} />
           <button className="primary" type="button" disabled={uploading} onClick={() => inputRef.current?.click()}>
-            {uploading ? "Indexing…" : <><Upload size={15} /> Upload document</>}
+            {uploading ? t("indexing") : <><Upload size={15} /> {t("uploadDocument")}</>}
           </button>
         </>
       )}
@@ -84,28 +86,28 @@ export function DocumentsDashboard({
           </div>
         </div>
       ) : visibleDocuments.length ? (
-        <div className="management-list" aria-label="Documents">
+        <div className="management-list" aria-label={t("documents")}>
           {visibleDocuments.map((document) => (
             <article className="management-row document-management-row" key={document.name}>
               <span className="document-kind" aria-hidden="true">{fileKind(documentDisplayName(document.name))}</span>
               <span className="management-row-copy">
                 <strong>{documentDisplayName(document.name)}</strong>
-                <small>Shared with every agent in this workspace</small>
+                <small>{t("sharedWithAgents")}</small>
               </span>
               <span className="document-facts">
-                <span>{document.chunks} {document.chunks === 1 ? "chunk" : "chunks"}</span>
+                <span>{document.chunks} {t(document.chunks === 1 ? "chunk" : "chunks")}</span>
                 <span className={`status-pill ${document.status === "failed" ? "failed" : "available"}`}>
-                  <i />{document.status === "failed" ? "Failed" : "Indexed"}
+                  <i />{document.status === "failed" ? t("failed") : t("indexed")}
                 </span>
               </span>
               <button
                 className="row-action danger"
                 type="button"
                 disabled={deleting === document.name}
-                aria-label={`Delete ${documentDisplayName(document.name)}`}
+                aria-label={t("deleteDocument", { name: documentDisplayName(document.name) })}
                 onClick={() => requestDelete(document.name)}
               >
-                {deleting === document.name ? "Deleting…" : <Trash2 size={14} />}
+                {deleting === document.name ? t("deleting") : <Trash2 size={14} />}
               </button>
             </article>
           ))}
@@ -113,9 +115,9 @@ export function DocumentsDashboard({
       ) : (
         <div className="management-empty">
           <span className="empty-mark"><FileUp size={20} /></span>
-          <h2>{query ? "No matching documents" : "Build a shared knowledge library"}</h2>
-          <p>{query ? "Try a different filename." : "Upload a TXT, PDF, or DOCX file. Every agent in this workspace can retrieve it."}</p>
-          {!query && <button className="primary" type="button" disabled={uploading} onClick={() => inputRef.current?.click()}><Upload size={15} /> Upload document</button>}
+          <h2>{query ? t("noMatchingDocuments") : t("buildKnowledgeLibrary")}</h2>
+          <p>{query ? t("tryDifferentFilename") : t("uploadDocumentHint")}</p>
+          {!query && <button className="primary" type="button" disabled={uploading} onClick={() => inputRef.current?.click()}><Upload size={15} /> {t("uploadDocument")}</button>}
         </div>
       )}
     </ManagementPage>
