@@ -1,5 +1,5 @@
 import { type ChangeEvent, useMemo, useRef, useState } from "react";
-import { FileUp, Search, Trash2, Upload } from "lucide-react";
+import { FileUp, Trash2, Upload } from "lucide-react";
 
 import { type DashboardDestination, type WorkspaceIdentity } from "../../../components/layout/DashboardSidebar";
 import { ManagementPage } from "../../../components/layout/ManagementPage";

@@ -1,5 +1,4 @@
 import { useEffect, useState } from "react";
-import { CircleAlert as AlertCircle } from "lucide-react";
 
 import App from "../../../app/App";
 import { apiResponse } from "../../../shared/api/client";
