@@ -1,4 +1,4 @@
-import { BrainCircuit } from "lucide-react";
+import { Command } from "lucide-react";
 
 type BrandProps = { compact?: boolean };
 
@@ -6,7 +6,7 @@ type BrandProps = { compact?: boolean };
 export function Brand({ compact = false }: BrandProps) {
   return (
     <div className={`brand ${compact ? "brand-compact" : ""}`}>
-      <span className="brand-mark" aria-hidden="true"><BrainCircuit size={compact ? 17 : 23} strokeWidth={2.1} /></span>
+      <span className="brand-mark" aria-hidden="true"><Command size={compact ? 17 : 23} strokeWidth={2.15} /></span>
       {!compact && <span><strong>AI Platform</strong><small>Build with intelligence</small></span>}
     </div>
   );
