@@ -1,5 +1,5 @@
 import { FormEvent, RefObject, useEffect, useRef, useState } from "react";
-import { ArrowUp, Paperclip, Plus, Printer, SquarePen } from "lucide-react";
+import { ArrowUp, Check, Copy, Paperclip, Plus, Printer, SquarePen } from "lucide-react";
 
 import { DEFAULT_MODEL } from "../../../shared/config/constants";
 import { Avatar } from "../../../shared/ui/Avatar";
@@ -23,6 +23,7 @@ export function ChatPane(props: ChatPaneProps) {
   const { agent, session, draft, files, streaming, uploadRef, onDraft, onFiles, onSubmit, onNewSession } = props;
   const messagesRef = useRef<HTMLDivElement>(null);
   const [actionsOpen, setActionsOpen] = useState(false);
+  const [copiedMessageId, setCopiedMessageId] = useState<string | null>(null);
   const latestContent = session?.messages.at(-1)?.content;
 
   useEffect(() => {
@@ -53,20 +54,26 @@ export function ChatPane(props: ChatPaneProps) {
           <article className={`message ${message.role}`} key={message.id}>
             {message.role === "assistant" && <Avatar name={agent.name} small />}
             <div className="message-body">
-              {message.role === "assistant" && message.meta && (message.meta.tools.length > 0 || message.meta.chunks > 0) && (
-                <div className="meta-row">
-                  {message.meta.tools.map((tool, index) => (
-                    <span className={index === 0 ? "active" : ""} key={tool}>
-                      {tool}{index === 0 && message.meta?.chunks ? ` · ${message.meta.chunks} chunks` : ""}{index === 0 && message.meta?.prepSeconds ? ` · ${formatDuration(message.meta.prepSeconds)}` : ""}
-                    </span>
-                  ))}
-                  {message.meta.tools.length === 0 && message.meta.chunks > 0 && <span className="active">rag_search · {message.meta.chunks} chunks</span>}
+              {message.role === "assistant" && message.meta && (
+                <div className="message-activity">
+                  <div className="meta-row" aria-label="Tools used">
+                    <small>Tools</small>
+                    {message.meta.tools.length > 0
+                      ? message.meta.tools.map((tool) => <span className="active" key={tool}>{tool}</span>)
+                      : <span>None</span>}
+                  </div>
+                  {message.meta.chunks > 0 && (
+                    <div className="meta-row" aria-label="Retrieved context">
+                      <small>Retrieved</small>
+                      <span className="active">{message.meta.chunks} {message.meta.chunks === 1 ? "chunk" : "chunks"}{message.meta.prepSeconds ? ` · ${formatDuration(message.meta.prepSeconds)}` : ""}</span>
+                    </div>
+                  )}
                 </div>
               )}
               <div className="bubble">
                 {message.content ? (
                   message.role === "assistant" ? (
-                    <AssistantMessageContent content={message.content} references={message.meta?.artifacts} />
+                    <AssistantMessageContent content={message.content} references={message.meta?.artifacts} sources={message.meta?.sources} />
                   ) : message.content
                 ) : (
                   <span className="typing">Thinking<span>.</span><span>.</span><span>.</span></span>
@@ -77,6 +84,22 @@ export function ChatPane(props: ChatPaneProps) {
                   </div>
                 )}
               </div>
+              {!!message.content && (
+                <button
+                  className="message-copy"
+                  type="button"
+                  aria-label="Copy message"
+                  onClick={() => {
+                    void navigator.clipboard.writeText(message.content).then(() => {
+                      setCopiedMessageId(message.id);
+                      window.setTimeout(() => setCopiedMessageId((current) => current === message.id ? null : current), 1600);
+                    });
+                  }}
+                >
+                  {copiedMessageId === message.id ? <Check size={13} /> : <Copy size={13} />}
+                  {copiedMessageId === message.id ? "Copied" : "Copy"}
+                </button>
+              )}
               {message.role === "assistant" && (
                 <div className="message-status">
                   <span>{streaming && message === session?.messages.at(-1) ? "streaming" : "complete"}</span>

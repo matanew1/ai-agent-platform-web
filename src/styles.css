@@ -1198,6 +1198,20 @@ textarea:focus-visible {
   line-height: 1.5;
 }
 
+.message-copy {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  margin-top: 7px;
+  padding: 3px 0;
+  border: 0;
+  background: transparent;
+  color: var(--text-muted);
+  font: 11px var(--font-mono);
+}
+
+.message-copy:hover { color: var(--text-primary); }
+
 .assistant-copy {
   min-width: 0;
   white-space: normal;
@@ -1435,6 +1449,22 @@ textarea:focus-visible {
   flex-wrap: wrap;
   gap: 6px;
   margin-bottom: 10px;
+}
+
+.message-activity {
+  display: grid;
+  gap: 6px;
+  margin-bottom: 11px;
+}
+
+.message-activity .meta-row { margin: 0; }
+
+.meta-row small {
+  align-self: center;
+  color: var(--text-muted);
+  font: 10px var(--font-mono);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
 }
 
 .meta-row span,

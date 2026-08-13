@@ -1,5 +1,5 @@
 import { apiRequest, apiStream } from "../../shared/api/client";
-import type { ArtifactReference, ChatAttachment, ChatMetadata, IndexedChatDocument, StoredSession } from "./types";
+import type { ArtifactReference, ChatAttachment, ChatMetadata, IndexedChatDocument, RetrievedSource, StoredSession } from "./types";
 
 type StreamChatInput = {
   agentId: string;
@@ -65,12 +65,25 @@ export async function streamChat(input: StreamChatInput): Promise<ChatMetadata> 
   } catch {
     // Indexing is complete even if the optional display metadata is malformed.
   }
+  let sources: RetrievedSource[] = [];
+  try {
+    const parsed: unknown = JSON.parse(response.headers.get("X-Retrieved-Sources") || "[]");
+    if (Array.isArray(parsed)) sources = parsed.filter((item): item is { source_id: string; excerpt: string; score: number } => (
+      typeof item === "object" && item !== null &&
+      typeof (item as { source_id?: unknown }).source_id === "string" &&
+      typeof (item as { excerpt?: unknown }).excerpt === "string" &&
+      typeof (item as { score?: unknown }).score === "number"
+    )).map((item) => ({ sourceId: item.source_id, excerpt: item.excerpt, score: item.score }));
+  } catch {
+    // The answer stream remains usable if optional citations are malformed.
+  }
   return {
     tools,
     chunks: Number.isFinite(parsedChunks) ? parsedChunks : 0,
     prepSeconds: Number.isFinite(parsedPrepSeconds) ? parsedPrepSeconds : undefined,
     artifacts,
     indexedDocuments,
+    sources,
   };
 }
 

@@ -216,13 +216,18 @@ function fromStoredSession(stored: StoredSession): Session {
       content: message.content,
       meta: message.role === "assistant" && (
         message.tools_invoked?.length || message.chunks_retrieved || message.prep_time_seconds ||
-        message.artifacts?.length
+        message.artifacts?.length || message.sources?.length
       ) ? {
         tools: message.tools_invoked || [],
         chunks: message.chunks_retrieved || 0,
         prepSeconds: message.prep_time_seconds || undefined,
         artifacts: message.artifacts || [],
         indexedDocuments: [],
+        sources: (message.sources || []).map((source) => ({
+          sourceId: source.source_id,
+          excerpt: source.excerpt,
+          score: source.score,
+        })),
       } : undefined,
     })),
     updatedAt: Date.parse(stored.updated_at) || Date.now(),

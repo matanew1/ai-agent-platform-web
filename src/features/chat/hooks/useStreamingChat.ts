@@ -48,7 +48,7 @@ export function useStreamingChat({ agent, session, updateSession, onError, onDoc
       id: assistantId,
       role: "assistant",
       content: "",
-      meta: { tools: [], chunks: 0, artifacts: [], indexedDocuments: [] },
+      meta: { tools: [], chunks: 0, artifacts: [], indexedDocuments: [], sources: [] },
     };
     const update = (updater: (current: Session) => Session) =>
       updateSession(agent.id, session.id, updater);
