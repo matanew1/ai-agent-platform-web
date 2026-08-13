@@ -1,14 +1,15 @@
 import { findMessageArtifacts } from "../artifacts";
-import type { ArtifactReference } from "../types";
+import type { ArtifactReference, RetrievedSource } from "../types";
 import { ArtifactDownloadCard } from "./ArtifactDownloadCard";
 import { MarkdownMessage } from "./MarkdownMessage";
 
 type AssistantMessageContentProps = {
   content: string;
   references?: ArtifactReference[];
+  sources?: RetrievedSource[];
 };
 
-export function AssistantMessageContent({ content, references = [] }: AssistantMessageContentProps) {
+export function AssistantMessageContent({ content, references = [], sources = [] }: AssistantMessageContentProps) {
   // Scanned from `references` only - the backend's structured list of
   // artifacts this turn's tool calls actually produced - never from the
   // model's own free-text `content`. The model can (and, seen live, does)
@@ -32,6 +33,12 @@ export function AssistantMessageContent({ content, references = [] }: AssistantM
             <ArtifactDownloadCard artifact={artifact} key={artifact.path} />
           ))}
         </div>
+      )}
+      {sources.length > 0 && (
+        <details className="message-sources">
+          <summary>Sources ({sources.length})</summary>
+          {sources.map((source, index) => <div key={`${source.sourceId}-${index}`}><strong>{source.sourceId}</strong><p>{source.excerpt}</p></div>)}
+        </details>
       )}
     </>
   );
