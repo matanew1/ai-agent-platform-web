@@ -3,8 +3,10 @@ import { Download, FileText, FileCode, Loader as Loader2, CircleAlert as AlertCi
 
 import { apiResponse } from "../../../shared/api/client";
 import type { MessageArtifact } from "../artifacts";
+import { useI18n } from "../../../shared/i18n/I18nProvider";
 
 export function ArtifactDownloadCard({ artifact }: { artifact: MessageArtifact }) {
+  const { t } = useI18n();
   const [state, setState] = useState<"idle" | "downloading" | "failed">("idle");
 
   const download = async () => {
@@ -37,10 +39,10 @@ export function ArtifactDownloadCard({ artifact }: { artifact: MessageArtifact }
       </span>
       <span className="artifact-details">
         <strong>{artifact.filename}</strong>
-        <small>{artifact.kind === "pdf" ? "PDF document" : "Markdown file"}</small>
+        <small>{artifact.kind === "pdf" ? t("pdfDocument") : t("markdownFile")}</small>
       </span>
       <span className="artifact-action">
-        {state === "downloading" ? <><Loader2 size={13} className="spin" /> Downloading…</> : state === "failed" ? <><AlertCircle size={13} /> Retry</> : <><Download size={13} /> Download</>}
+        {state === "downloading" ? <><Loader2 size={13} className="spin" /> {t("downloading")}</> : state === "failed" ? <><AlertCircle size={13} /> {t("retry")}</> : <><Download size={13} /> {t("download")}</>}
       </span>
     </button>
   );

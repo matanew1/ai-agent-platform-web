@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { Check, Copy, X } from "lucide-react";
+import { useI18n } from "../../../shared/i18n/I18nProvider";
 
 type CopyState = "idle" | "copied" | "failed";
 
@@ -9,6 +10,7 @@ type CodeBlockProps = {
 };
 
 export function CodeBlock({ code, language }: CodeBlockProps) {
+  const { t } = useI18n();
   const [copyState, setCopyState] = useState<CopyState>("idle");
   const resetTimer = useRef<number | null>(null);
   const languageLabel = normalizeLanguage(language);
@@ -33,9 +35,9 @@ export function CodeBlock({ code, language }: CodeBlockProps) {
     <div className="markdown-code-block">
       <div className="markdown-code-toolbar">
         <span>{languageLabel}</span>
-        <button type="button" onClick={copy} aria-label="Copy code to clipboard">
+        <button type="button" onClick={copy} aria-label={t("copyCode")}>
           {copyState === "copied" ? <Check size={13} /> : copyState === "failed" ? <X size={13} /> : <Copy size={13} />}
-          {copyState === "copied" ? "Copied" : copyState === "failed" ? "Copy failed" : "Copy"}
+          {copyState === "copied" ? t("copied") : copyState === "failed" ? t("copyFailed") : t("copy")}
         </button>
       </div>
       <pre>

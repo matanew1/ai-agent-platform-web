@@ -1,26 +1,30 @@
-import { Bot, FileText, KeyRound, Layers, MessageSquare } from "lucide-react";
+import { Bot, FileText, Layers, MessageSquare, Settings } from "lucide-react";
 import type { ComponentType } from "react";
 import { Brand } from "../../shared/ui/Brand";
+import { APP_VERSION } from "../../shared/config/version";
+import { useI18n } from "../../shared/i18n/I18nProvider";
+import { AccountAvatar } from "../../shared/ui/AccountAvatar";
 
-export type DashboardDestination = "agents" | "sessions" | "documents" | "tools";
+export type DashboardDestination = "agents" | "sessions" | "documents" | "tools" | "settings";
 
 export type WorkspaceIdentity = {
+  id: string;
   displayName: string;
   email: string;
 };
 
 type NavItem = {
-  label: string;
+  label: "agents" | "sessions" | "documents" | "tools" | "settings";
   destination: DashboardDestination | null;
   icon: ComponentType<{ size?: number; className?: string }>;
 };
 
 const navigation: NavItem[] = [
-  { label: "Agents", destination: "agents", icon: Bot },
-  { label: "Sessions", destination: "sessions", icon: MessageSquare },
-  { label: "Documents", destination: "documents", icon: FileText },
-  { label: "Tool registry", destination: "tools", icon: Layers },
-  { label: "API keys", destination: null, icon: KeyRound },
+  { label: "agents", destination: "agents", icon: Bot },
+  { label: "sessions", destination: "sessions", icon: MessageSquare },
+  { label: "documents", destination: "documents", icon: FileText },
+  { label: "tools", destination: "tools", icon: Layers },
+  { label: "settings", destination: "settings", icon: Settings },
 ];
 
 type DashboardSidebarProps = {
@@ -32,11 +36,13 @@ type DashboardSidebarProps = {
 };
 
 export function DashboardSidebar({ identity, connected, onSignOut, onNavigate, activeDestination }: DashboardSidebarProps) {
+  const { t } = useI18n();
   return (
     <aside className="dashboard-sidebar">
       <Brand />
+      <small className="app-version">AI Platform v{APP_VERSION}</small>
       <div className="workspace-identity" title={identity.email}>
-        <span className="eyebrow">Workspace</span>
+        <span className="eyebrow">{t("workspace")}</span>
         <strong>{identity.displayName}</strong>
       </div>
       <nav className="dashboard-nav" aria-label="Workspace navigation">
@@ -46,7 +52,7 @@ export function DashboardSidebar({ identity, connected, onSignOut, onNavigate, a
           const Icon = item.icon;
           return (
             <button
-              key={item.label}
+              key={item.destination}
               type="button"
               aria-current={active ? "page" : undefined}
               aria-disabled={disabled}
@@ -54,24 +60,20 @@ export function DashboardSidebar({ identity, connected, onSignOut, onNavigate, a
               onClick={() => !disabled && item.destination && onNavigate(item.destination)}
             >
               <span className="nav-icon"><Icon size={15} /></span>
-              {item.label}
+              {t(item.label)}
             </button>
           );
         })}
       </nav>
       <div className={`workspace-connection ${connected ? "connected" : "disconnected"}`}>
         <i />
-        <span>{connected ? "API connected" : "API unavailable"}</span>
+        <span>{connected ? t("apiConnected") : t("apiUnavailable")}</span>
       </div>
       <div className="sidebar-account">
-        <span className="sidebar-account-avatar" aria-hidden="true">{initials(identity.displayName)}</span>
+        <AccountAvatar name={identity.displayName} userId={identity.id} />
         <span><strong>{identity.displayName}</strong><small>{identity.email}</small></span>
-        {onSignOut && <button type="button" onClick={onSignOut}>Sign out</button>}
+        {onSignOut && <button type="button" onClick={onSignOut}>{t("signOut")}</button>}
       </div>
     </aside>
   );
-}
-
-function initials(name: string) {
-  return name.split(/\s+/).filter(Boolean).slice(0, 2).map((part) => part[0]).join("").toUpperCase() || "U";
 }
