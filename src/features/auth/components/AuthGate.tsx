@@ -4,8 +4,8 @@ import App from "../../../app/App";
 import { apiResponse } from "../../../shared/api/client";
 import { apiUrl } from "../../../shared/api/url";
 import { LoadingScreen } from "../../../shared/ui/LoadingScreen";
-import { Notice } from "../../../shared/ui/Notice";
 import type { AuthenticatedUser } from "../types";
+import { AuthWelcome } from "./AuthWelcome";
 
 type MeResponse = {
   id: string;
@@ -81,38 +81,5 @@ export function AuthGate() {
         window.location.href = apiUrl("/auth/logout");
       }}
     />
-  );
-}
-
-function AuthWelcome({
-  onSignIn,
-  onSignUp,
-  authFailed,
-  onDismissError,
-}: {
-  onSignIn: () => void;
-  onSignUp: () => void;
-  authFailed: boolean;
-  onDismissError: () => void;
-}) {
-  return (
-    <div className="auth-shell">
-      <section className="auth-card">
-        <span className="auth-mark">AP</span>
-        <p className="eyebrow">Agent Platform</p>
-        <h1>Build agents that work with you.</h1>
-        <p>Sign in to access your agents, retained sessions, documents, and tool registry.</p>
-        {authFailed && (
-          <div style={{ margin: "16px 0 0" }}>
-            <Notice message="Sign-in failed or was cancelled. Please try again." onDismiss={onDismissError} />
-          </div>
-        )}
-        <div className="auth-actions">
-          <button className="primary" type="button" onClick={onSignIn}>Sign in</button>
-          <button type="button" onClick={onSignUp}>Create account</button>
-        </div>
-        <small>Authentication and session security are provided by WorkOS AuthKit.</small>
-      </section>
-    </div>
   );
 }
