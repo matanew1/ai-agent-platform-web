@@ -23,10 +23,11 @@ export function AssistantMessageContent({ content, references = [], sources = []
   const artifacts = findMessageArtifacts(
     references.map((reference) => reference.download_url).join("\n"),
   );
+  const displayContent = artifacts.length ? content : removeUnverifiedArtifactParagraphs(content);
 
   return (
     <>
-      <MarkdownMessage content={content} />
+      <MarkdownMessage content={displayContent} />
       {artifacts.length > 0 && (
         <div className="artifact-downloads" aria-label="Generated files">
           {artifacts.map((artifact) => (
@@ -42,4 +43,17 @@ export function AssistantMessageContent({ content, references = [], sources = []
       )}
     </>
   );
+}
+
+// A model can still occasionally claim that it generated a file even when no
+// generation tool ran. Never display that claim as a broken link: genuine
+// files always arrive with structured metadata in `references`.
+const UNVERIFIED_ARTIFACT_LINK = /(?:https?:\/\/artifacts\/|(?:https?:\/\/[^\s<>"'()[\]]+)?\/artifacts\/)[^\s<>"'()[\]]+\.(?:pdf|md|markdown)(?:\?[^\s<>"'()[\]]*)?/i;
+
+function removeUnverifiedArtifactParagraphs(content: string) {
+  return content
+    .split(/\n{2,}/)
+    .filter((paragraph) => !UNVERIFIED_ARTIFACT_LINK.test(paragraph))
+    .join("\n\n")
+    .trim();
 }

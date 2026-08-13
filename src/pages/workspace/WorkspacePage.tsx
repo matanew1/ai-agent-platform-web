@@ -12,6 +12,7 @@ import type { IndexedChatDocument } from "../../features/chat/types";
 import { DocumentsPanel } from "../../features/documents/components/DocumentsPanel";
 import type { IndexedDocument } from "../../features/documents/types";
 import type { ModelCatalog } from "../../features/models/types";
+import type { AppSettings } from "../../shared/hooks/useAppSettings";
 import { useI18n } from "../../shared/i18n/I18nProvider";
 
 type WorkspacePageProps = {
@@ -44,13 +45,21 @@ type WorkspacePageProps = {
   onDocumentsIndexed: (documents: IndexedChatDocument[]) => void;
   showSources: boolean;
   showToolActivity: boolean;
+  autoReadResponses: AppSettings["autoReadResponses"];
+  sendOnEnter: AppSettings["sendOnEnter"];
+  sidebarDefaultOpen: AppSettings["sidebarDefaultOpen"];
+  englishVoice: AppSettings["englishVoice"];
+  hebrewVoice: AppSettings["hebrewVoice"];
+  speechInputLocale: AppSettings["speechInputLocale"];
   onDashboard: () => void;
+  onSettings: () => void;
   onSignOut?: () => void;
 };
 
 export function WorkspacePage(props: WorkspacePageProps) {
   const { t } = useI18n();
   const [tab, setTab] = useState<"config" | "documents" | "traces">(props.initialTab);
+  const [sidebarOpen, setSidebarOpen] = useState(() => typeof window === "undefined" || (window.innerWidth > 768 && props.sidebarDefaultOpen));
   const [saving, setSaving] = useState(false);
   const attachmentRef = useRef<HTMLInputElement>(null);
   const documentRef = useRef<HTMLInputElement>(null);
@@ -103,7 +112,7 @@ export function WorkspacePage(props: WorkspacePageProps) {
   };
 
   return (
-    <section className="workspace">
+    <section className={`workspace ${sidebarOpen ? "sidebar-open" : "sidebar-closed"}`}>
       <WorkspaceSidebar
         identity={props.identity}
         agents={props.agents}
@@ -116,10 +125,18 @@ export function WorkspacePage(props: WorkspacePageProps) {
         onDeleteSession={deleteSession}
         onCreateAgent={props.onCreateAgent}
         onDashboard={props.onDashboard}
+        onSettings={props.onSettings}
         onSignOut={props.onSignOut}
       />
       <ChatPane
         agent={props.agent}
+        userId={props.identity.id}
+        sidebarOpen={sidebarOpen}
+        autoReadResponses={props.autoReadResponses}
+        sendOnEnter={props.sendOnEnter}
+        englishVoice={props.englishVoice}
+        hebrewVoice={props.hebrewVoice}
+        speechInputLocale={props.speechInputLocale}
         session={props.currentSession}
         draft={chat.draft}
         files={chat.files}
@@ -129,6 +146,7 @@ export function WorkspacePage(props: WorkspacePageProps) {
         onFiles={chat.setFiles}
         onSubmit={chat.send}
         onNewSession={props.onNewSession}
+        onToggleSidebar={() => setSidebarOpen((open) => !open)}
         showSources={props.showSources}
         showToolActivity={props.showToolActivity}
       />

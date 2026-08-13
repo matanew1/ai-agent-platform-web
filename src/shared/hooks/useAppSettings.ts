@@ -5,14 +5,21 @@ const keyFor = (userId: string) => `ai-platform:${userId}:settings`;
 
 export type Locale = "en" | "he";
 export type Theme = "dark" | "light" | "system";
+export type SpeechInputLocale = "auto" | "en" | "he";
 export type AppSettings = {
   theme: Theme; locale: Locale; compact: boolean; reduceMotion: boolean;
   showSources: boolean; showToolActivity: boolean;
+  highContrast: boolean; autoReadResponses: boolean; sendOnEnter: boolean; sidebarDefaultOpen: boolean;
+  englishVoice: string; hebrewVoice: string;
+  speechInputLocale: SpeechInputLocale;
 };
 
 const defaults: AppSettings = {
   theme: "dark", locale: "en", compact: false, reduceMotion: false,
   showSources: true, showToolActivity: true,
+  highContrast: false, autoReadResponses: false, sendOnEnter: true, sidebarDefaultOpen: true,
+  englishVoice: "preferred", hebrewVoice: "preferred",
+  speechInputLocale: "auto",
 };
 
 function initialSettings(userId: string): AppSettings {
@@ -52,6 +59,7 @@ export function useAppSettings(userId: string) {
     document.documentElement.dir = settings.locale === "he" ? "rtl" : "ltr";
     document.documentElement.dataset.density = settings.compact ? "compact" : "comfortable";
     document.documentElement.dataset.motion = settings.reduceMotion ? "reduced" : "full";
+    document.documentElement.dataset.contrast = settings.highContrast ? "high" : "normal";
   }, [settings, userId]);
 
   useEffect(() => {

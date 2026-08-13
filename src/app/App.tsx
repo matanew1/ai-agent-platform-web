@@ -154,7 +154,14 @@ export default function App({ currentUser, onSignOut }: AppProps) {
           onDocumentsIndexed={documents.addIndexed}
           showSources={settingsState.settings.showSources}
           showToolActivity={settingsState.settings.showToolActivity}
+          autoReadResponses={settingsState.settings.autoReadResponses}
+          sendOnEnter={settingsState.settings.sendOnEnter}
+          sidebarDefaultOpen={settingsState.settings.sidebarDefaultOpen}
+          englishVoice={settingsState.settings.englishVoice}
+          hebrewVoice={settingsState.settings.hebrewVoice}
+          speechInputLocale={settingsState.settings.speechInputLocale}
           onDashboard={openDashboard}
+          onSettings={() => navigateDashboard("settings")}
           onSignOut={onSignOut}
           initialTab={workspaceTab}
         />

@@ -63,14 +63,15 @@ export function CreateAgentModal({ tools, modelCatalog, loadingModels, onClose, 
         <button type="button" className="close" onClick={onClose} aria-label={t("close")}><X size={20} /></button>
         <p className="eyebrow">{t("newAgent")}</p>
         <h2 id="create-agent-title">{t("newAgentTitle")}</h2>
-        <label>{t("name")}<input autoFocus value={name} maxLength={100} onChange={(event) => setName(event.target.value)} placeholder={t("namePlaceholder")} required /></label>
-        <label>{t("shortDescription")}<input value={description} maxLength={500} onChange={(event) => setDescription(event.target.value)} placeholder={t("descriptionPlaceholder")} /></label>
+        <label>{t("name")}<input dir="auto" autoFocus value={name} maxLength={100} onChange={(event) => setName(event.target.value)} placeholder={t("namePlaceholder")} required /></label>
+        <label>{t("shortDescription")}<input dir="auto" value={description} maxLength={500} onChange={(event) => setDescription(event.target.value)} placeholder={t("descriptionPlaceholder")} /></label>
         <div className="modal-runtime-grid">
           <label htmlFor="create-agent-model">
             <span className="modal-field-heading"><span>{t("model")}</span><span className="model-provider">{loadingModels ? t("loading") : modelCatalog.provider}</span></span>
             <span className="model-select-wrap">
               <select
                 id="create-agent-model"
+                dir="ltr"
                 value={model}
                 disabled={saving || loadingModels || !hasSelectableModels}
                 onChange={(event) => setModel(event.target.value)}
@@ -88,6 +89,7 @@ export function CreateAgentModal({ tools, modelCatalog, loadingModels, onClose, 
               <input
                 id="create-agent-temperature"
                 type="range"
+                dir="ltr"
                 min={modelCatalog.temperature.min}
                 max={modelCatalog.temperature.max}
                 step={modelCatalog.temperature.step}
@@ -103,7 +105,7 @@ export function CreateAgentModal({ tools, modelCatalog, loadingModels, onClose, 
         {!loadingModels && !hasSelectableModels && (
           <p className="panel-footnote warning">{t("installChatModel")}</p>
         )}
-        <label>{t("systemPrompt")}<textarea value={prompt} maxLength={8000} onChange={(event) => setPrompt(event.target.value)} required /></label>
+        <label>{t("systemPrompt")}<textarea dir="auto" value={prompt} maxLength={8000} onChange={(event) => setPrompt(event.target.value)} required /></label>
         <button className="primary wide" disabled={saving || loadingModels || !hasSelectableModels}>{saving ? t("creating") : loadingModels ? t("loading") : t("createAgent")}</button>
       </form>
     </div>

@@ -73,7 +73,7 @@ export function AgentConfigPanel({ agent, tools, saving, modelCatalog, loadingMo
           {saving ? t("saving") : changed ? t("unsaved") : t("saved")}
         </button>
       </div>
-      <textarea className="prompt-editor" value={prompt} maxLength={8000} disabled={saving} onChange={(event) => setPrompt(event.target.value)} />
+      <textarea dir="auto" className="prompt-editor" value={prompt} maxLength={8000} disabled={saving} onChange={(event) => setPrompt(event.target.value)} />
       <div className="prompt-meta"><span>{t("appliesNextMessage")}</span><span>{prompt.length} / 8000</span></div>
       <div className="config-block model-block">
         <div className="field-label">
@@ -83,6 +83,7 @@ export function AgentConfigPanel({ agent, tools, saving, modelCatalog, loadingMo
         <div className="model-select-wrap">
           <select
             id="agent-model"
+            dir="ltr"
             value={model}
             disabled={saving || loadingModels || !hasSelectableModels}
             onChange={(event) => setModel(event.target.value)}
@@ -101,6 +102,7 @@ export function AgentConfigPanel({ agent, tools, saving, modelCatalog, loadingMo
           <input
             id="agent-temperature"
             type="range"
+            dir="ltr"
             min={modelCatalog.temperature.min}
             max={modelCatalog.temperature.max}
             step={modelCatalog.temperature.step}

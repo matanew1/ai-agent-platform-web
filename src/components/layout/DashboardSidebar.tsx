@@ -14,7 +14,7 @@ export type WorkspaceIdentity = {
 };
 
 type NavItem = {
-  label: "agents" | "sessions" | "documents" | "tools" | "settings";
+  label: "agents" | "sessions" | "documents" | "tools";
   destination: DashboardDestination | null;
   icon: ComponentType<{ size?: number; className?: string }>;
 };
@@ -24,7 +24,6 @@ const navigation: NavItem[] = [
   { label: "sessions", destination: "sessions", icon: MessageSquare },
   { label: "documents", destination: "documents", icon: FileText },
   { label: "tools", destination: "tools", icon: Layers },
-  { label: "settings", destination: "settings", icon: Settings },
 ];
 
 type DashboardSidebarProps = {
@@ -68,6 +67,12 @@ export function DashboardSidebar({ identity, connected, onSignOut, onNavigate, a
       <div className={`workspace-connection ${connected ? "connected" : "disconnected"}`}>
         <i />
         <span>{connected ? t("apiConnected") : t("apiUnavailable")}</span>
+      </div>
+      <div className="sidebar-bottom-nav">
+        <button className={`sidebar-settings ${activeDestination === "settings" ? "active" : ""}`} type="button" aria-current={activeDestination === "settings" ? "page" : undefined} onClick={() => onNavigate("settings")}>
+          <Settings size={15} />
+          {t("settings")}
+        </button>
       </div>
       <div className="sidebar-account">
         <AccountAvatar name={identity.displayName} userId={identity.id} />

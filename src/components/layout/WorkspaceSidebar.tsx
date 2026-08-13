@@ -1,4 +1,4 @@
-import { Plus, Trash2 } from "lucide-react";
+import { Plus, Settings, Trash2 } from "lucide-react";
 import type { Agent } from "../../features/agents/types";
 import type { Session } from "../../features/chat/types";
 import { Avatar } from "../../shared/ui/Avatar";
@@ -20,6 +20,7 @@ type WorkspaceSidebarProps = {
   onDeleteSession: (sessionId: string) => void;
   onCreateAgent: () => void;
   onDashboard: () => void;
+  onSettings: () => void;
   onSignOut?: () => void;
 };
 
@@ -67,6 +68,9 @@ export function WorkspaceSidebar(props: WorkspaceSidebarProps) {
           </div>
         ))}
       </nav>
+      <div className="sidebar-bottom-nav">
+        <button className="sidebar-settings" type="button" onClick={props.onSettings}><Settings size={15} /> {t("settings")}</button>
+      </div>
       <div className="workspace-sidebar-account">
         <AccountAvatar name={props.identity.displayName} userId={props.identity.id} compact />
         <span><strong>{props.identity.displayName}</strong><small>{props.identity.email}</small></span>
