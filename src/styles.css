@@ -1044,8 +1044,15 @@ textarea:focus-visible {
   padding: var(--sp-3) var(--sp-2) 0;
 }
 
-.session-list button {
+.session-item {
+  display: flex;
+  align-items: center;
+  border-radius: var(--radius-sm);
+}
+
+.session-select {
   width: 100%;
+  min-width: 0;
   padding: 8px 10px;
   border: 0;
   border-radius: var(--radius-sm);
@@ -1055,12 +1062,13 @@ textarea:focus-visible {
   transition: all 100ms ease;
 }
 
-.session-list button:hover {
+.session-item:hover,
+.session-item:focus-within {
   background: rgba(255, 255, 255, 0.04);
   color: var(--text-primary);
 }
 
-.session-list button.active {
+.session-item.active {
   background: var(--bg-surface);
   color: var(--text-primary);
 }
@@ -1080,6 +1088,26 @@ textarea:focus-visible {
   color: var(--text-muted);
   font: 10px var(--font-mono);
 }
+
+.session-delete {
+  display: grid;
+  width: 30px;
+  height: 30px;
+  flex: 0 0 auto;
+  margin-right: 4px;
+  place-items: center;
+  border: 0;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--text-muted);
+  opacity: 0;
+}
+
+.session-item:hover .session-delete,
+.session-item:focus-within .session-delete { opacity: 1; }
+
+.session-delete:hover:not(:disabled) { color: var(--danger); background: rgba(255, 91, 91, 0.1); }
+.session-delete:disabled { cursor: wait; opacity: 0.5; }
 
 /* ============================================================
    CHAT PANE

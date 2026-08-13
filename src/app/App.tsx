@@ -128,6 +128,7 @@ export default function App({ currentUser, onSignOut }: AppProps) {
           loadingModels={modelsState.loading}
           sessions={sessions.sessions}
           selectedSessionId={sessions.selectedSessionId}
+          deletingSessionId={sessions.deletingSession?.split(":").slice(1).join(":") || null}
           currentSession={sessions.currentSession}
           documents={documents.documents}
           loadingDocuments={documents.loading}
@@ -135,6 +136,7 @@ export default function App({ currentUser, onSignOut }: AppProps) {
           deletingDocument={documents.deleting}
           onSelectAgent={openAgent}
           onSelectSession={sessions.selectSession}
+          onDeleteSession={(sessionId) => sessions.removeSession(agentsState.selectedAgent!.id, sessionId)}
           onCreateAgent={() => setShowCreate(true)}
           onNewSession={() => sessions.createSession()}
           onUpdateSession={sessions.updateSession}

@@ -23,6 +23,7 @@ type WorkspacePageProps = {
   loadingModels: boolean;
   sessions: Session[];
   selectedSessionId: string | null;
+  deletingSessionId: string | null;
   currentSession: Session | null;
   documents: IndexedDocument[];
   loadingDocuments: boolean;
@@ -30,6 +31,7 @@ type WorkspacePageProps = {
   deletingDocument: string | null;
   onSelectAgent: (agent: Agent) => void;
   onSelectSession: (sessionId: string) => void;
+  onDeleteSession: (sessionId: string) => Promise<void>;
   onCreateAgent: () => void;
   onNewSession: () => void;
   onUpdateSession: (agentId: string, sessionId: string, updater: (session: Session) => Session) => void;
@@ -90,6 +92,12 @@ export function WorkspacePage(props: WorkspacePageProps) {
     await props.onDeleteAgent(props.agent.id);
   };
 
+  const deleteSession = (sessionId: string) => {
+    const session = props.sessions.find((candidate) => candidate.id === sessionId);
+    if (!session || !window.confirm(`Delete “${session.title}”? This cannot be undone.`)) return;
+    void props.onDeleteSession(sessionId);
+  };
+
   return (
     <section className="workspace">
       <WorkspaceSidebar
@@ -98,8 +106,10 @@ export function WorkspacePage(props: WorkspacePageProps) {
         selectedAgentId={props.agent.id}
         sessions={props.sessions}
         selectedSessionId={props.selectedSessionId}
+        deletingSessionId={props.deletingSessionId}
         onSelectAgent={props.onSelectAgent}
         onSelectSession={props.onSelectSession}
+        onDeleteSession={deleteSession}
         onCreateAgent={props.onCreateAgent}
         onDashboard={props.onDashboard}
         onSignOut={props.onSignOut}

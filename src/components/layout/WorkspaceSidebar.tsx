@@ -1,4 +1,4 @@
-import { Plus } from "lucide-react";
+import { Plus, Trash2 } from "lucide-react";
 import type { Agent } from "../../features/agents/types";
 import type { Session } from "../../features/chat/types";
 import { Avatar } from "../../shared/ui/Avatar";
@@ -10,8 +10,10 @@ type WorkspaceSidebarProps = {
   selectedAgentId: string;
   sessions: Session[];
   selectedSessionId: string | null;
+  deletingSessionId?: string | null;
   onSelectAgent: (agent: Agent) => void;
   onSelectSession: (sessionId: string) => void;
+  onDeleteSession: (sessionId: string) => void;
   onCreateAgent: () => void;
   onDashboard: () => void;
   onSignOut?: () => void;
@@ -41,10 +43,22 @@ export function WorkspaceSidebar(props: WorkspaceSidebarProps) {
       </div>
       <nav className="session-list">
         {props.sessions.map((session) => (
-          <button key={session.id} className={session.id === props.selectedSessionId ? "active" : ""} onClick={() => props.onSelectSession(session.id)}>
-            <strong>{session.title}</strong>
-            <span>{session.messages.length} messages · {formatSessionDate(session.updatedAt)}</span>
-          </button>
+          <div className={`session-item ${session.id === props.selectedSessionId ? "active" : ""}`} key={session.id}>
+            <button className="session-select" onClick={() => props.onSelectSession(session.id)}>
+              <strong>{session.title}</strong>
+              <span>{session.messages.length} messages · {formatSessionDate(session.updatedAt)}</span>
+            </button>
+            <button
+              aria-label={`Delete ${session.title}`}
+              className="session-delete"
+              disabled={props.deletingSessionId === session.id}
+              onClick={() => props.onDeleteSession(session.id)}
+              title="Delete session"
+              type="button"
+            >
+              <Trash2 size={14} />
+            </button>
+          </div>
         ))}
       </nav>
       <div className="workspace-sidebar-account">
