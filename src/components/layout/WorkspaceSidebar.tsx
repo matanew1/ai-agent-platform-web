@@ -2,6 +2,7 @@ import { Plus, Trash2 } from "lucide-react";
 import type { Agent } from "../../features/agents/types";
 import type { Session } from "../../features/chat/types";
 import { Avatar } from "../../shared/ui/Avatar";
+import { Brand } from "../../shared/ui/Brand";
 import type { WorkspaceIdentity } from "./DashboardSidebar";
 
 type WorkspaceSidebarProps = {
@@ -24,7 +25,7 @@ export function WorkspaceSidebar(props: WorkspaceSidebarProps) {
     <aside className="sidebar">
       <div className="sidebar-head">
         <button className="sidebar-workspace" type="button" onClick={props.onDashboard}>
-          <span className="eyebrow">Workspace</span><strong>{props.identity.displayName}</strong>
+          <Brand />
         </button>
         <button className="icon-button" onClick={props.onCreateAgent} aria-label="Create agent"><Plus size={18} /></button>
       </div>

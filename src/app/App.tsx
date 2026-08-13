@@ -195,6 +195,11 @@ export default function App({ currentUser, onSignOut }: AppProps) {
           onSignOut={onSignOut}
           onCreate={() => setShowCreate(true)}
           onSelect={(agent) => openAgent(agent)}
+          onDelete={(agent) => {
+            if (window.confirm(`Delete “${agent.name}” and its configuration? This cannot be undone.`)) {
+              void deleteAgent(agent.id);
+            }
+          }}
           onNavigate={navigateDashboard}
         />
       )}

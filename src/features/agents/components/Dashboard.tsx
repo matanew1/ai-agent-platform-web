@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { Plus } from "lucide-react";
+import { FileUp, Plus, Sparkles, Trash2, Wrench } from "lucide-react";
 
 import { DashboardSidebar, type DashboardDestination, type WorkspaceIdentity } from "../../../components/layout/DashboardSidebar";
 import { DEFAULT_MODEL, DEFAULT_TEMPERATURE } from "../../../shared/config/constants";
@@ -15,10 +15,11 @@ type DashboardProps = {
   onSignOut?: () => void;
   onCreate: () => void;
   onSelect: (agent: Agent) => void;
+  onDelete: (agent: Agent) => void;
   onNavigate: (destination: DashboardDestination) => void;
 };
 
-export function Dashboard({ identity, connected, agents, stats, sessionCounts, onSignOut, onCreate, onSelect, onNavigate }: DashboardProps) {
+export function Dashboard({ identity, connected, agents, stats, sessionCounts, onSignOut, onCreate, onSelect, onDelete, onNavigate }: DashboardProps) {
   const [query, setQuery] = useState("");
   const visibleAgents = useMemo(() => {
     const normalized = query.trim().toLowerCase();
@@ -46,11 +47,26 @@ export function Dashboard({ identity, connected, agents, stats, sessionCounts, o
           </div>
         </header>
         <div className="agent-grid">
+          {!query && agents.length === 0 && (
+            <section className="workspace-onboarding">
+              <span className="workspace-onboarding-mark"><Sparkles size={20} /></span>
+              <div>
+                <p className="eyebrow">Start here</p>
+                <h2>Build your first focused agent</h2>
+                <p>Give it a role, add the documents it should know, then enable only the tools it needs.</p>
+              </div>
+              <div className="workspace-onboarding-steps">
+                <span><Plus size={14} /> Create agent</span><span><FileUp size={14} /> Add documents</span><span><Wrench size={14} /> Enable tools</span>
+              </div>
+              <button className="primary" type="button" onClick={onCreate}>Create an agent <Plus size={15} /></button>
+            </section>
+          )}
           {visibleAgents.map((agent) => {
             const index = agents.findIndex((candidate) => candidate.id === agent.id);
             const isDraft = !agent.system_prompt.trim();
             return (
-              <button className="agent-card" key={agent.id} type="button" onClick={() => onSelect(agent)}>
+              <article className="agent-card" key={agent.id}>
+                <button className="agent-card-open" type="button" onClick={() => onSelect(agent)} aria-label={`Open ${agent.name}`}>
                 <div className="agent-card-head">
                   <Avatar name={agent.name} tone={index} />
                   <div>
@@ -73,7 +89,9 @@ export function Dashboard({ identity, connected, agents, stats, sessionCounts, o
                     </>
                   )}
                 </footer>
-              </button>
+                </button>
+                <button className="agent-delete" type="button" onClick={() => onDelete(agent)} aria-label={`Delete ${agent.name}`} title="Delete agent"><Trash2 size={14} /></button>
+              </article>
             );
           })}
           {!query && (

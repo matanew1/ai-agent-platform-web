@@ -1,5 +1,6 @@
 import { Bot, FileText, KeyRound, Layers, MessageSquare } from "lucide-react";
 import type { ComponentType } from "react";
+import { Brand } from "../../shared/ui/Brand";
 
 export type DashboardDestination = "agents" | "sessions" | "documents" | "tools";
 
@@ -33,6 +34,7 @@ type DashboardSidebarProps = {
 export function DashboardSidebar({ identity, connected, onSignOut, onNavigate, activeDestination }: DashboardSidebarProps) {
   return (
     <aside className="dashboard-sidebar">
+      <Brand />
       <div className="workspace-identity" title={identity.email}>
         <span className="eyebrow">Workspace</span>
         <strong>{identity.displayName}</strong>
