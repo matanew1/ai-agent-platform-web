@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { CircleAlert as AlertCircle } from "lucide-react";
 
 import App from "../../../app/App";
 import { apiResponse } from "../../../shared/api/client";
@@ -7,7 +8,6 @@ import { LoadingScreen } from "../../../shared/ui/LoadingScreen";
 import { Notice } from "../../../shared/ui/Notice";
 import type { AuthenticatedUser } from "../types";
 
-/** Shape of GET /auth/me's response body - see authentication.schemas.MeResponse. */
 type MeResponse = {
   id: string;
   email: string | null;
@@ -29,16 +29,6 @@ type GateState =
   | { status: "signed-out" }
   | { status: "signed-in"; user: AuthenticatedUser };
 
-/**
- * The whole auth surface: on mount, ask the backend (via its session
- * cookie, sent automatically) who's signed in. No WorkOS SDK, no WorkOS
- * env var, no client-side token anywhere in this file - sign-in/sign-up/
- * sign-out are all plain navigations to this backend's own /auth/* routes
- * (see authentication.controller), which own the entire WorkOS round-trip
- * themselves. Also covers the local AUTH_MODE=development bypass: in that
- * mode the backend's /auth/me always succeeds with the configured dev
- * identity, so this component never needs to know dev mode exists.
- */
 export function AuthGate() {
   const [state, setState] = useState<GateState>({ status: "loading" });
   const [authFailed, setAuthFailed] = useState(
@@ -114,7 +104,9 @@ function AuthWelcome({
         <h1>Build agents that work with you.</h1>
         <p>Sign in to access your agents, retained sessions, documents, and tool registry.</p>
         {authFailed && (
-          <Notice message="Sign-in failed or was cancelled. Please try again." onDismiss={onDismissError} />
+          <div style={{ margin: "16px 0 0" }}>
+            <Notice message="Sign-in failed or was cancelled. Please try again." onDismiss={onDismissError} />
+          </div>
         )}
         <div className="auth-actions">
           <button className="primary" type="button" onClick={onSignIn}>Sign in</button>

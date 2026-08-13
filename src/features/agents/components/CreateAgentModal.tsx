@@ -1,4 +1,5 @@
 import { type CSSProperties, FormEvent, useEffect, useState } from "react";
+import { X } from "lucide-react";
 
 import { DEFAULT_PROMPT } from "../../../shared/config/constants";
 import { rangePercentage } from "../../models/range";
@@ -57,7 +58,7 @@ export function CreateAgentModal({ tools, modelCatalog, loadingModels, onClose, 
   return (
     <div className="modal-backdrop" role="presentation" onMouseDown={(event) => event.target === event.currentTarget && onClose()}>
       <form className="modal" role="dialog" aria-modal="true" aria-labelledby="create-agent-title" onSubmit={submit}>
-        <button type="button" className="close" onClick={onClose} aria-label="Close">×</button>
+        <button type="button" className="close" onClick={onClose} aria-label="Close"><X size={20} /></button>
         <p className="eyebrow">New agent</p>
         <h2 id="create-agent-title">Give your agent a role.</h2>
         <label>Name<input autoFocus value={name} maxLength={100} onChange={(event) => setName(event.target.value)} placeholder="e.g. Research Scout" required /></label>

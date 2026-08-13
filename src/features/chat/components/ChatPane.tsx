@@ -1,4 +1,5 @@
 import { FormEvent, RefObject, useEffect, useRef, useState } from "react";
+import { ArrowUp, Paperclip, Plus, Printer, SquarePen } from "lucide-react";
 
 import { DEFAULT_MODEL } from "../../../shared/config/constants";
 import { Avatar } from "../../../shared/ui/Avatar";
@@ -34,10 +35,10 @@ export function ChatPane(props: ChatPaneProps) {
   return (
     <section className="chat-pane">
       <header className="chat-head">
-        <div><h2>{session?.title || "New conversation"}</h2><p>{agent.name} · session {session?.id.slice(0, 6) || "new"} · {agent.model || DEFAULT_MODEL}</p></div>
+        <div><h2>{session?.title || "New conversation"}</h2><p>{agent.name} · {session?.id.slice(0, 6) || "new"} · {agent.model || DEFAULT_MODEL}</p></div>
         <div className="chat-actions">
-          <button className="secondary" type="button" onClick={() => window.print()}>Export</button>
-          <button className="secondary" type="button" onClick={onNewSession}>New session</button>
+          <button className="secondary" type="button" onClick={() => window.print()}><Printer size={14} /> Export</button>
+          <button className="secondary" type="button" onClick={onNewSession}><SquarePen size={14} /> New session</button>
         </div>
       </header>
       <div className="messages" ref={messagesRef}>
@@ -72,7 +73,7 @@ export function ChatPane(props: ChatPaneProps) {
                 )}
                 {!!message.files?.length && (
                   <div className="attachment-row">
-                    {message.files.map((file) => <span key={file}>⌕ {file}</span>)}
+                    {message.files.map((file) => <span key={file}>{file}</span>)}
                   </div>
                 )}
               </div>
@@ -120,14 +121,16 @@ export function ChatPane(props: ChatPaneProps) {
                 aria-expanded={actionsOpen}
                 onClick={() => setActionsOpen((open) => !open)}
               >
-                <span aria-hidden="true">+</span>
+                <Plus size={18} />
               </button>
               {actionsOpen && (
                 <div className="composer-menu" role="menu">
                   <button type="button" role="menuitem" onClick={() => {
                     setActionsOpen(false);
                     uploadRef.current?.click();
-                  }}>Attach files</button>
+                  }}>
+                    <Paperclip size={13} /> Attach files
+                  </button>
                 </div>
               )}
             </div>
@@ -145,7 +148,7 @@ export function ChatPane(props: ChatPaneProps) {
             />
             <div className="composer-actions">
               <button className="send" disabled={!session || !draft.trim() || streaming} aria-label="Send message">
-                <svg width="15" height="15" viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="M10 16V4M4.5 9.5L10 4l5.5 5.5" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" /></svg>
+                <ArrowUp size={16} />
               </button>
             </div>
           </div>

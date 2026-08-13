@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import { ChevronDown, ChevronUp, Layers, Search, Wrench } from "lucide-react";
 
 import { type DashboardDestination, type WorkspaceIdentity } from "../../../components/layout/DashboardSidebar";
 import { ManagementPage } from "../../../components/layout/ManagementPage";
@@ -60,7 +61,7 @@ export function ToolRegistryDashboard({
                   aria-expanded={expanded}
                   onClick={() => setExpandedTool(expanded ? null : tool.name)}
                 >
-                  <span className="tool-glyph" aria-hidden="true">⌘</span>
+                  <span className="tool-glyph" aria-hidden="true"><Wrench size={16} /></span>
                   <span className="management-row-copy">
                     <strong>{tool.name}</strong>
                     <small>{tool.description}</small>
@@ -68,7 +69,7 @@ export function ToolRegistryDashboard({
                   <span className="tool-card-meta">
                     <span>{parameters.length} {parameters.length === 1 ? "argument" : "arguments"}</span>
                     <span className="status-pill available"><i />Available</span>
-                    <b aria-hidden="true">{expanded ? "−" : "+"}</b>
+                    <b aria-hidden="true">{expanded ? <ChevronUp size={16} /> : <ChevronDown size={16} />}</b>
                   </span>
                 </button>
                 {expanded && (
@@ -99,7 +100,7 @@ export function ToolRegistryDashboard({
         </div>
       ) : (
         <div className="management-empty">
-          <span className="empty-mark">⌘</span>
+          <span className="empty-mark"><Layers size={20} /></span>
           <h2>{query ? "No matching tools" : "No tools registered"}</h2>
           <p>{query ? "Try a tool name or capability." : "Tools appear here when the backend registers them."}</p>
         </div>

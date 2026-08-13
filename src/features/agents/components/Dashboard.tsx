@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import { Plus, Search } from "lucide-react";
 
 import { DashboardSidebar, type DashboardDestination, type WorkspaceIdentity } from "../../../components/layout/DashboardSidebar";
 import { DEFAULT_MODEL, DEFAULT_TEMPERATURE } from "../../../shared/config/constants";
@@ -37,11 +38,11 @@ export function Dashboard({ identity, connected, agents, stats, sessionCounts, o
         <header className="dashboard-header">
           <div>
             <h1>Agents</h1>
-            <p>{stats.agents} agents · {stats.sessions} sessions today · {stats.documents} documents indexed</p>
+            <p>{stats.agents} agents · {stats.sessions} sessions · {stats.documents} documents</p>
           </div>
           <div className="dashboard-actions">
             <input value={query} onChange={(event) => setQuery(event.target.value)} aria-label="Search agents" placeholder="Search agents" />
-            <button className="primary" type="button" onClick={onCreate}>New agent</button>
+            <button className="primary" type="button" onClick={onCreate}><Plus size={15} /> New agent</button>
           </div>
         </header>
         <div className="agent-grid">
@@ -68,7 +69,6 @@ export function Dashboard({ identity, connected, agents, stats, sessionCounts, o
                   ) : (
                     <>
                       <span>{agent.allowed_tools.length || "All"} tools</span>
-                      <span>{stats.documents} docs</span>
                       <span>{sessionCounts[agent.id] || 0} {(sessionCounts[agent.id] || 0) === 1 ? "session" : "sessions"}</span>
                     </>
                   )}
@@ -83,7 +83,7 @@ export function Dashboard({ identity, connected, agents, stats, sessionCounts, o
               <small>or start from a template</small>
             </button>
           )}
-          {query && visibleAgents.length === 0 && <p className="no-results">No agents match “{query}”.</p>}
+          {query && visibleAgents.length === 0 && <p className="no-results">No agents match "{query}".</p>}
         </div>
       </div>
     </section>

@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { Check, Copy, X } from "lucide-react";
 
 type CopyState = "idle" | "copied" | "failed";
 
@@ -33,7 +34,7 @@ export function CodeBlock({ code, language }: CodeBlockProps) {
       <div className="markdown-code-toolbar">
         <span>{languageLabel}</span>
         <button type="button" onClick={copy} aria-label="Copy code to clipboard">
-          <CopyIcon />
+          {copyState === "copied" ? <Check size={13} /> : copyState === "failed" ? <X size={13} /> : <Copy size={13} />}
           {copyState === "copied" ? "Copied" : copyState === "failed" ? "Copy failed" : "Copy"}
         </button>
       </div>
@@ -68,13 +69,4 @@ async function copyText(value: string) {
   } finally {
     textArea.remove();
   }
-}
-
-function CopyIcon() {
-  return (
-    <svg width="13" height="13" viewBox="0 0 16 16" fill="none" aria-hidden="true">
-      <rect x="5.25" y="5.25" width="7.5" height="7.5" rx="1.5" stroke="currentColor" strokeWidth="1.5" />
-      <path d="M3.25 10.25h-.5a1.5 1.5 0 0 1-1.5-1.5v-6a1.5 1.5 0 0 1 1.5-1.5h6a1.5 1.5 0 0 1 1.5 1.5v.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
-    </svg>
-  );
 }

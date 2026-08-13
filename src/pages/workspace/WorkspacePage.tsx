@@ -1,4 +1,5 @@
 import { ChangeEvent, useEffect, useRef, useState } from "react";
+import { Activity } from "lucide-react";
 
 import { WorkspaceSidebar } from "../../components/layout/WorkspaceSidebar";
 import type { WorkspaceIdentity } from "../../components/layout/DashboardSidebar";
@@ -160,7 +161,7 @@ function TracesPanel({ session }: { session: Session | null }) {
     <div className="inspector-content traces-panel">
       <p className="inspector-kicker">Current session</p>
       {assistantMessages.length === 0 ? (
-        <div className="trace-empty"><span>◎</span><h3>No traces yet</h3><p>Tool calls and retrieval activity appear here after an agent responds.</p></div>
+        <div className="trace-empty"><span><Activity size={24} /></span><h3>No traces yet</h3><p>Tool calls and retrieval activity appear here after an agent responds.</p></div>
       ) : assistantMessages.map((message, index) => (
         <div className="trace-row" key={message.id}>
           <i />

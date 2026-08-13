@@ -1,4 +1,5 @@
 import { type ChangeEvent, useMemo, useRef, useState } from "react";
+import { FileUp, Search, Trash2, Upload } from "lucide-react";
 
 import { type DashboardDestination, type WorkspaceIdentity } from "../../../components/layout/DashboardSidebar";
 import { ManagementPage } from "../../../components/layout/ManagementPage";
@@ -41,7 +42,7 @@ export function DocumentsDashboard({
     : `${documents.length} ${documents.length === 1 ? "document" : "documents"} · ${totalChunks} indexed chunks`;
 
   const requestDelete = (sourceId: string) => {
-    if (window.confirm(`Delete “${documentDisplayName(sourceId)}” from the shared document library?`)) onDelete(sourceId);
+    if (window.confirm(`Delete "${documentDisplayName(sourceId)}" from the shared document library?`)) onDelete(sourceId);
   };
 
   return (
@@ -63,13 +64,25 @@ export function DocumentsDashboard({
           />
           <input ref={inputRef} type="file" accept=".txt,.pdf,.docx" hidden onChange={onUpload} />
           <button className="primary" type="button" disabled={uploading} onClick={() => inputRef.current?.click()}>
-            {uploading ? "Indexing…" : "Upload document"}
+            {uploading ? "Indexing…" : <><Upload size={15} /> Upload document</>}
           </button>
         </>
       )}
     >
       {loading && documents.length === 0 ? (
-        <div className="management-empty compact"><span className="empty-mark">•••</span><h2>Loading documents</h2></div>
+        <div className="skeleton">
+          <div className="skeleton-list">
+            {Array.from({ length: 4 }).map((_, i) => (
+              <div key={i} className="skeleton-list-row">
+                <div className="skeleton-block" style={{ width: "36px", height: "36px", borderRadius: "8px" }} />
+                <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: "6px" }}>
+                  <div className="skeleton-block skeleton-line-sm" />
+                  <div className="skeleton-block skeleton-line-md" style={{ height: "10px", width: "25%" }} />
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
       ) : visibleDocuments.length ? (
         <div className="management-list" aria-label="Documents">
           {visibleDocuments.map((document) => (
@@ -92,17 +105,17 @@ export function DocumentsDashboard({
                 aria-label={`Delete ${documentDisplayName(document.name)}`}
                 onClick={() => requestDelete(document.name)}
               >
-                {deleting === document.name ? "Deleting…" : "Delete"}
+                {deleting === document.name ? "Deleting…" : <Trash2 size={14} />}
               </button>
             </article>
           ))}
         </div>
       ) : (
         <div className="management-empty">
-          <span className="empty-mark">↑</span>
+          <span className="empty-mark"><FileUp size={20} /></span>
           <h2>{query ? "No matching documents" : "Build a shared knowledge library"}</h2>
           <p>{query ? "Try a different filename." : "Upload a TXT, PDF, or DOCX file. Every agent in this workspace can retrieve it."}</p>
-          {!query && <button className="primary" type="button" disabled={uploading} onClick={() => inputRef.current?.click()}>Upload document</button>}
+          {!query && <button className="primary" type="button" disabled={uploading} onClick={() => inputRef.current?.click()}><Upload size={15} /> Upload document</button>}
         </div>
       )}
     </ManagementPage>

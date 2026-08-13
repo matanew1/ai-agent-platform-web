@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { ChevronRight, MessageSquarePlus, Search, Trash2 } from "lucide-react";
 
 import { type DashboardDestination, type WorkspaceIdentity } from "../../../components/layout/DashboardSidebar";
 import { ManagementPage } from "../../../components/layout/ManagementPage";
@@ -60,7 +61,7 @@ export function SessionsDashboard({
     : `${entries.length} ${entries.length === 1 ? "session" : "sessions"} across ${agents.length} ${agents.length === 1 ? "agent" : "agents"}`;
 
   const requestDelete = (agentId: string, session: Session) => {
-    if (window.confirm(`Delete “${session.title}” and its retained history?`)) {
+    if (window.confirm(`Delete "${session.title}" and its retained history?`)) {
       onDeleteSession(agentId, session.id);
     }
   };
@@ -98,13 +99,25 @@ export function SessionsDashboard({
             disabled={!selectedAgent}
             onClick={() => selectedAgent && onNewSession(selectedAgent)}
           >
-            New session
+            <MessageSquarePlus size={15} /> New session
           </button>
         </>
       )}
     >
       {loading && entries.length === 0 ? (
-        <div className="management-empty compact"><span className="empty-mark">•••</span><h2>Loading sessions</h2></div>
+        <div className="skeleton">
+          <div className="skeleton-list">
+            {Array.from({ length: 5 }).map((_, i) => (
+              <div key={i} className="skeleton-list-row">
+                <div className="skeleton-block" style={{ width: "28px", height: "28px", borderRadius: "6px" }} />
+                <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: "6px" }}>
+                  <div className="skeleton-block skeleton-line-sm" />
+                  <div className="skeleton-block skeleton-line-md" style={{ height: "10px", width: "30%" }} />
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
       ) : visibleEntries.length ? (
         <div className="management-list" aria-label="Sessions">
           {visibleEntries.map(({ agent, agentIndex, session }) => (
@@ -120,7 +133,7 @@ export function SessionsDashboard({
                 </span>
                 <span className="management-row-side">
                   <time dateTime={new Date(session.updatedAt).toISOString()}>{formatUpdatedAt(session.updatedAt)}</time>
-                  <i aria-hidden="true">›</i>
+                  <ChevronRight size={18} />
                 </span>
               </button>
               <button
@@ -130,14 +143,14 @@ export function SessionsDashboard({
                 aria-label={`Delete ${session.title}`}
                 onClick={() => requestDelete(agent.id, session)}
               >
-                {deletingSession === `${agent.id}:${session.id}` ? "Deleting…" : "Delete"}
+                {deletingSession === `${agent.id}:${session.id}` ? "Deleting…" : <Trash2 size={14} />}
               </button>
             </article>
           ))}
         </div>
       ) : (
         <div className="management-empty">
-          <span className="empty-mark">◇</span>
+          <span className="empty-mark"><MessageSquarePlus size={20} /></span>
           <h2>{query ? "No matching sessions" : "No sessions yet"}</h2>
           <p>{query ? "Try a different session or agent name." : "Start a conversation with an agent and it will appear here."}</p>
           {!query && selectedAgent && <button className="primary" type="button" onClick={() => onNewSession(selectedAgent)}>Start a session</button>}

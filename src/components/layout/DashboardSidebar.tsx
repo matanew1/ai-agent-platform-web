@@ -1,9 +1,26 @@
+import { Bot, FileText, KeyRound, Layers, MessageSquare } from "lucide-react";
+import type { ComponentType } from "react";
+
 export type DashboardDestination = "agents" | "sessions" | "documents" | "tools";
 
 export type WorkspaceIdentity = {
   displayName: string;
   email: string;
 };
+
+type NavItem = {
+  label: string;
+  destination: DashboardDestination | null;
+  icon: ComponentType<{ size?: number; className?: string }>;
+};
+
+const navigation: NavItem[] = [
+  { label: "Agents", destination: "agents", icon: Bot },
+  { label: "Sessions", destination: "sessions", icon: MessageSquare },
+  { label: "Documents", destination: "documents", icon: FileText },
+  { label: "Tool registry", destination: "tools", icon: Layers },
+  { label: "API keys", destination: null, icon: KeyRound },
+];
 
 type DashboardSidebarProps = {
   identity: WorkspaceIdentity;
@@ -12,14 +29,6 @@ type DashboardSidebarProps = {
   onNavigate: (destination: DashboardDestination) => void;
   activeDestination: DashboardDestination;
 };
-
-const navigation = [
-  { label: "Agents", destination: "agents" as const },
-  { label: "Sessions", destination: "sessions" as const },
-  { label: "Documents", destination: "documents" as const },
-  { label: "Tool registry", destination: "tools" as const },
-  { label: "API keys", destination: null },
-];
 
 export function DashboardSidebar({ identity, connected, onSignOut, onNavigate, activeDestination }: DashboardSidebarProps) {
   return (
@@ -32,9 +41,20 @@ export function DashboardSidebar({ identity, connected, onSignOut, onNavigate, a
         {navigation.map((item) => {
           const disabled = item.destination === null;
           const active = item.destination === activeDestination;
-          return <button key={item.label} type="button" aria-current={active ? "page" : undefined} aria-disabled={disabled} className={active ? "active" : ""} onClick={() => !disabled && item.destination && onNavigate(item.destination)}>
-            {item.label}
-          </button>
+          const Icon = item.icon;
+          return (
+            <button
+              key={item.label}
+              type="button"
+              aria-current={active ? "page" : undefined}
+              aria-disabled={disabled}
+              className={active ? "active" : ""}
+              onClick={() => !disabled && item.destination && onNavigate(item.destination)}
+            >
+              <span className="nav-icon"><Icon size={15} /></span>
+              {item.label}
+            </button>
+          );
         })}
       </nav>
       <div className={`workspace-connection ${connected ? "connected" : "disconnected"}`}>

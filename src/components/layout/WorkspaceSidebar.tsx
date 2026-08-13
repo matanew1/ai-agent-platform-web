@@ -1,3 +1,4 @@
+import { ArrowLeft, Plus } from "lucide-react";
 import type { Agent } from "../../features/agents/types";
 import type { Session } from "../../features/chat/types";
 import { Avatar } from "../../shared/ui/Avatar";
@@ -23,7 +24,7 @@ export function WorkspaceSidebar(props: WorkspaceSidebarProps) {
         <button className="sidebar-workspace" type="button" onClick={props.onDashboard}>
           <span className="eyebrow">Workspace</span><strong>{props.identity.displayName}</strong>
         </button>
-        <button className="icon-button" onClick={props.onCreateAgent} aria-label="Create agent">+</button>
+        <button className="icon-button" onClick={props.onCreateAgent} aria-label="Create agent"><Plus size={18} /></button>
       </div>
       <p className="eyebrow label">Agents</p>
       <nav className="agent-list">

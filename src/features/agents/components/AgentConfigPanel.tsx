@@ -1,4 +1,5 @@
 import { type CSSProperties, useEffect, useState } from "react";
+import { Trash2 } from "lucide-react";
 
 import { rangePercentage } from "../../models/range";
 import type { ModelCatalog } from "../../models/types";
@@ -53,14 +54,6 @@ export function AgentConfigPanel({ agent, tools, saving, modelCatalog, loadingMo
     return onSave(changes);
   };
 
-  // Auto-save 3s after the last edit to any field, instead of requiring an
-  // explicit click on the save-state button - that button (and its
-  // "unsaved"/"saving…"/"saved" labeling) still works for an immediate save.
-  // Re-armed on every change to prompt/allowedTools/model/temperature, so a
-  // burst of edits (e.g. typing in the prompt) only fires one save 3s after
-  // the user stops, not one per keystroke. Guarded the same way the button
-  // is (not already saving, models loaded, at least one tool allowed) so
-  // this can't fire a request the manual save path would also reject.
   useEffect(() => {
     if (!changed || saving || loadingModels || allowedTools.length === 0) return;
     const timeoutId = setTimeout(() => {
@@ -136,8 +129,8 @@ export function AgentConfigPanel({ agent, tools, saving, modelCatalog, loadingMo
           );
         })}
       </div>
-      {allowedTools.length === 0 && <p className="panel-footnote warning">Select at least one tool. The backend currently treats an empty list as “allow all.”</p>}
-      <button className="danger inspector-delete" onClick={onDelete}>Delete agent</button>
+      {allowedTools.length === 0 && <p className="panel-footnote warning">Select at least one tool. The backend currently treats an empty list as "allow all."</p>}
+      <button className="danger inspector-delete" onClick={onDelete}><Trash2 size={13} /> Delete agent</button>
     </div>
   );
 }

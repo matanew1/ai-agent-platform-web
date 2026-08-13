@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { Download, FileText, FileCode, Loader as Loader2, CircleAlert as AlertCircle } from "lucide-react";
 
 import { apiResponse } from "../../../shared/api/client";
 import type { MessageArtifact } from "../artifacts";
@@ -32,17 +33,14 @@ export function ArtifactDownloadCard({ artifact }: { artifact: MessageArtifact }
       onClick={download}
     >
       <span className="artifact-type" aria-hidden="true">
-        {artifact.kind === "pdf" ? "PDF" : "MD"}
+        {artifact.kind === "pdf" ? <FileText size={18} /> : <FileCode size={18} />}
       </span>
       <span className="artifact-details">
         <strong>{artifact.filename}</strong>
         <small>{artifact.kind === "pdf" ? "PDF document" : "Markdown file"}</small>
       </span>
       <span className="artifact-action">
-        {state === "downloading" ? "Downloading…" : state === "failed" ? "Retry" : "Download"}
-        <svg width="15" height="15" viewBox="0 0 20 20" fill="none" aria-hidden="true">
-          <path d="M10 3v9m0 0 3.5-3.5M10 12 6.5 8.5M4 16h12" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" />
-        </svg>
+        {state === "downloading" ? <><Loader2 size={13} className="spin" /> Downloading…</> : state === "failed" ? <><AlertCircle size={13} /> Retry</> : <><Download size={13} /> Download</>}
       </span>
     </button>
   );
