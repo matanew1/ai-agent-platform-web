@@ -2,6 +2,14 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [0.3.0](https://github.com/matanew1/ai-agent-platform-web/compare/v0.2.0...v0.3.0) (2026-08-16)
+
+
+### Features
+
+* **chat:** add a stop-generation control for streaming responses ([048bbe6](https://github.com/matanew1/ai-agent-platform-web/commit/048bbe6c08470605f6a0e2a7aac2d8662fc8cca7))
+* **legal:** add terms, privacy, and cookies pages ([934806a](https://github.com/matanew1/ai-agent-platform-web/commit/934806a6ecce465f6624096e95f280e75307d163))
+
 ## 0.2.0 (2026-08-13)
 
 
