@@ -3,6 +3,7 @@ import { ArrowRight, FileText, ShieldCheck, Sparkles } from "lucide-react";
 import { Brand } from "../../../shared/ui/Brand";
 import { Notice } from "../../../shared/ui/Notice";
 import { useI18n } from "../../../shared/i18n/I18nProvider";
+import { LegalFooter } from "../../legal/components/LegalPage";
 
 type AuthWelcomeProps = {
   authFailed: boolean;
@@ -38,6 +39,7 @@ export function AuthWelcome({ authFailed, onDismissError, onSignIn, onSignUp }: 
         </div>
         <small>{t("authSecured")}</small>
       </section>
+      <LegalFooter />
     </main>
   );
 }

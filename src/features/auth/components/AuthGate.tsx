@@ -6,6 +6,7 @@ import { apiUrl } from "../../../shared/api/url";
 import { LoadingScreen } from "../../../shared/ui/LoadingScreen";
 import type { AuthenticatedUser } from "../types";
 import { AuthWelcome } from "./AuthWelcome";
+import { LegalPage, type LegalDocument } from "../../legal/components/LegalPage";
 
 type MeResponse = {
   id: string;
@@ -29,12 +30,14 @@ type GateState =
   | { status: "signed-in"; user: AuthenticatedUser };
 
 export function AuthGate() {
+  const legalDocument = legalDocumentForPath(window.location.pathname);
   const [state, setState] = useState<GateState>({ status: "loading" });
   const [authFailed, setAuthFailed] = useState(
     () => new URLSearchParams(window.location.search).has("auth_error"),
   );
 
   useEffect(() => {
+    if (legalDocument) return;
     let cancelled = false;
     apiResponse("/auth/me")
       .then(async (response) => {
@@ -52,7 +55,9 @@ export function AuthGate() {
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [legalDocument]);
+
+  if (legalDocument) return <LegalPage document={legalDocument} />;
 
   if (state.status === "loading") return <LoadingScreen />;
 
@@ -82,4 +87,12 @@ export function AuthGate() {
       }}
     />
   );
+}
+
+function legalDocumentForPath(pathname: string): LegalDocument | null {
+  const path = pathname.replace(/\/+$/, "") || "/";
+  if (path === "/terms") return "terms";
+  if (path === "/privacy") return "privacy";
+  if (path === "/cookies") return "cookies";
+  return null;
 }
