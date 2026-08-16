@@ -2,6 +2,20 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [0.4.0](https://github.com/matanew1/ai-agent-platform-web/compare/v0.3.0...v0.4.0) (2026-08-16)
+
+
+### Features
+
+* **schedules:** agent workspace UI for scheduled unattended runs ([110a440](https://github.com/matanew1/ai-agent-platform-web/commit/110a440b3d378215ad1f891cd337fc0448aa5ef0))
+* **schedules:** redesign dashboard as a card grid with create/edit modals ([6806655](https://github.com/matanew1/ai-agent-platform-web/commit/6806655541ffe1f52db39ca60ffbbebc1d925720))
+
+
+### Bug Fixes
+
+* **schedules:** address dashboard-redesign review findings ([bc778fe](https://github.com/matanew1/ai-agent-platform-web/commit/bc778fe5abb56717e2d135afb2d2a378de14e38b))
+* **schedules:** move to a top-level dashboard, fix error handling, add cron presets ([6559fcd](https://github.com/matanew1/ai-agent-platform-web/commit/6559fcd06a0fa5a308458262a27d42f6681fb54d))
+
 ## [0.3.0](https://github.com/matanew1/ai-agent-platform-web/compare/v0.2.0...v0.3.0) (2026-08-16)
 
 
