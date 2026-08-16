@@ -1,9 +1,9 @@
-import { Bot, FileText, Layers, MessageSquare, Settings } from "lucide-react";
+import { Bot, FileText, Layers, MessageSquare } from "lucide-react";
 import type { ComponentType } from "react";
 import { Brand } from "../../shared/ui/Brand";
 import { APP_VERSION } from "../../shared/config/version";
 import { useI18n } from "../../shared/i18n/I18nProvider";
-import { AccountAvatar } from "../../shared/ui/AccountAvatar";
+import { SidebarFooter } from "./SidebarFooter";
 
 export type DashboardDestination = "agents" | "sessions" | "documents" | "tools" | "settings";
 
@@ -40,10 +40,6 @@ export function DashboardSidebar({ identity, connected, onSignOut, onNavigate, a
     <aside className="dashboard-sidebar">
       <Brand />
       <small className="app-version">AI Platform v{APP_VERSION}</small>
-      <div className="workspace-identity" title={identity.email}>
-        <span className="eyebrow">{t("workspace")}</span>
-        <strong>{identity.displayName}</strong>
-      </div>
       <nav className="dashboard-nav" aria-label="Workspace navigation">
         {navigation.map((item) => {
           const disabled = item.destination === null;
@@ -68,17 +64,14 @@ export function DashboardSidebar({ identity, connected, onSignOut, onNavigate, a
         <i />
         <span>{connected ? t("apiConnected") : t("apiUnavailable")}</span>
       </div>
-      <div className="sidebar-bottom-nav">
-        <button className={`sidebar-settings ${activeDestination === "settings" ? "active" : ""}`} type="button" aria-current={activeDestination === "settings" ? "page" : undefined} onClick={() => onNavigate("settings")}>
-          <Settings size={15} />
-          {t("settings")}
-        </button>
-      </div>
-      <div className="sidebar-account">
-        <AccountAvatar name={identity.displayName} userId={identity.id} />
-        <span><strong>{identity.displayName}</strong><small>{identity.email}</small></span>
-        {onSignOut && <button type="button" onClick={onSignOut}>{t("signOut")}</button>}
-      </div>
+      <SidebarFooter
+        identity={identity}
+        settingsLabel={t("settings")}
+        signOutLabel={t("signOut")}
+        settingsActive={activeDestination === "settings"}
+        onSettings={() => onNavigate("settings")}
+        onSignOut={onSignOut}
+      />
     </aside>
   );
 }
