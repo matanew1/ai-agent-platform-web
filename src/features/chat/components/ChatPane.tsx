@@ -68,12 +68,25 @@ export function ChatPane(props: ChatPaneProps) {
   const speakingMessageRef = useRef<string | null>(null);
   const autoReadMessageRef = useRef<string | null>(null);
   const latestContent = session?.messages.at(-1)?.content;
+  const scrollRafRef = useRef<number | null>(null);
 
   useEffect(() => {
     const element = messagesRef.current;
     if (!element) return;
-    const distanceFromBottom = element.scrollHeight - element.scrollTop - element.clientHeight;
-    if (distanceFromBottom < 140) element.scrollTo({ top: element.scrollHeight, behavior: streaming ? "auto" : "smooth" });
+    if (scrollRafRef.current !== null) return;
+    scrollRafRef.current = requestAnimationFrame(() => {
+      scrollRafRef.current = null;
+      const el = messagesRef.current;
+      if (!el) return;
+      const distanceFromBottom = el.scrollHeight - el.scrollTop - el.clientHeight;
+      if (distanceFromBottom < 140) el.scrollTo({ top: el.scrollHeight, behavior: streaming ? "auto" : "smooth" });
+    });
+    return () => {
+      if (scrollRafRef.current !== null) {
+        cancelAnimationFrame(scrollRafRef.current);
+        scrollRafRef.current = null;
+      }
+    };
   }, [latestContent, session?.messages.length, streaming]);
 
   useEffect(() => { draftRef.current = draft; }, [draft]);
@@ -235,7 +248,7 @@ export function ChatPane(props: ChatPaneProps) {
               <div className="bubble" dir="auto">
                 {message.content ? (
                   message.role === "assistant" ? (
-                    <AssistantMessageContent content={message.content} references={message.meta?.artifacts} sources={showSources ? message.meta?.sources : []} />
+                    <AssistantMessageContent content={message.content} references={message.meta?.artifacts} sources={showSources ? message.meta?.sources : []} streaming={streaming && message === session?.messages.at(-1)} />
                   ) : message.content
                 ) : (
                   <span className="typing">{t("thinking")}<span>.</span><span>.</span><span>.</span></span>

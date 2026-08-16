@@ -7,9 +7,10 @@ type AssistantMessageContentProps = {
   content: string;
   references?: ArtifactReference[];
   sources?: RetrievedSource[];
+  streaming?: boolean;
 };
 
-export function AssistantMessageContent({ content, references = [], sources = [] }: AssistantMessageContentProps) {
+export function AssistantMessageContent({ content, references = [], sources = [], streaming }: AssistantMessageContentProps) {
   // Scanned from `references` only - the backend's structured list of
   // artifacts this turn's tool calls actually produced - never from the
   // model's own free-text `content`. The model can (and, seen live, does)
@@ -23,11 +24,11 @@ export function AssistantMessageContent({ content, references = [], sources = []
   const artifacts = findMessageArtifacts(
     references.map((reference) => reference.download_url).join("\n"),
   );
-  const displayContent = artifacts.length ? content : removeUnverifiedArtifactParagraphs(content);
+  const displayContent = streaming ? content : (artifacts.length ? content : removeUnverifiedArtifactParagraphs(content));
 
   return (
     <>
-      <MarkdownMessage content={displayContent} />
+      <MarkdownMessage content={displayContent} streaming={streaming} />
       {artifacts.length > 0 && (
         <div className="artifact-downloads" aria-label="Generated files">
           {artifacts.map((artifact) => (

@@ -67,6 +67,23 @@ export function useStreamingChat({ agent, session, updateSession, onError, onDoc
     activeRequest.current = controller;
     onError(null);
 
+    // rAF chunk batching: accumulate chunks and flush once per animation frame,
+    // so dozens of rapid onChunk calls coalesce into a single state update.
+    let pendingChunk = "";
+    let chunkRafId: number | null = null;
+    const flushChunk = () => {
+      chunkRafId = null;
+      if (!pendingChunk) return;
+      const chunk = pendingChunk;
+      pendingChunk = "";
+      update((current) => ({
+        ...current,
+        messages: current.messages.map((message) =>
+          message.id === assistantId ? { ...message, content: message.content + chunk } : message,
+        ),
+      }));
+    };
+
     try {
       const attachments = await Promise.all(queuedFiles.map(fileToAttachment));
       const meta = await streamChat({
@@ -75,13 +92,28 @@ export function useStreamingChat({ agent, session, updateSession, onError, onDoc
         message: input,
         files: attachments,
         signal: controller.signal,
-        onChunk: (chunk) => update((current) => ({
+        onChunk: (chunk) => {
+          pendingChunk += chunk;
+          if (chunkRafId === null) {
+            chunkRafId = requestAnimationFrame(flushChunk);
+          }
+        },
+      });
+      // Flush any remaining buffered text before applying final metadata.
+      if (chunkRafId !== null) {
+        cancelAnimationFrame(chunkRafId);
+        chunkRafId = null;
+      }
+      if (pendingChunk) {
+        const tail = pendingChunk;
+        pendingChunk = "";
+        update((current) => ({
           ...current,
           messages: current.messages.map((message) =>
-            message.id === assistantId ? { ...message, content: message.content + chunk } : message,
+            message.id === assistantId ? { ...message, content: message.content + tail } : message,
           ),
-        })),
-      });
+        }));
+      }
       onDocumentsIndexed(meta.indexedDocuments);
       update((current) => ({
         ...current,
@@ -92,6 +124,10 @@ export function useStreamingChat({ agent, session, updateSession, onError, onDoc
         updatedAt: Date.now(),
       }));
     } catch (reason) {
+      if (chunkRafId !== null) {
+        cancelAnimationFrame(chunkRafId);
+        chunkRafId = null;
+      }
       const interrupted = controller.signal.aborted;
       update((current) => ({
         ...current,

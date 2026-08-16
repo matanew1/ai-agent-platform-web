@@ -1,4 +1,4 @@
-import { Children, isValidElement, type ReactNode } from "react";
+import { memo, Children, isValidElement, type ReactNode } from "react";
 import ReactMarkdown, { defaultUrlTransform, type Components, type UrlTransform } from "react-markdown";
 import remarkGfm from "remark-gfm";
 
@@ -6,6 +6,8 @@ import { CodeBlock } from "./CodeBlock";
 
 type MarkdownMessageProps = {
   content: string;
+  /** When true, skip Markdown parsing and render raw text — used during streaming for speed. */
+  streaming?: boolean;
 };
 
 const markdownComponents: Components = {
@@ -40,8 +42,12 @@ const markdownComponents: Components = {
   },
 };
 
-/** Render model output as Markdown without allowing raw HTML or executable URLs. */
-export function MarkdownMessage({ content }: MarkdownMessageProps) {
+/** Render model output as Markdown without allowing raw HTML or executable URLs.
+ *  During streaming, skip the Markdown parser entirely and render raw text for speed. */
+export const MarkdownMessage = memo(function MarkdownMessage({ content, streaming }: MarkdownMessageProps) {
+  if (streaming) {
+    return <div className="assistant-copy markdown-message"><p>{content}</p></div>;
+  }
   return (
     <div className="assistant-copy markdown-message">
       <ReactMarkdown
@@ -54,7 +60,7 @@ export function MarkdownMessage({ content }: MarkdownMessageProps) {
       </ReactMarkdown>
     </div>
   );
-}
+});
 
 export const safeMarkdownUrl: UrlTransform = (url) => {
   const transformed = defaultUrlTransform(url);
