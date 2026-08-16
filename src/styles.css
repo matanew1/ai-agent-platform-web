@@ -2090,6 +2090,7 @@ html[dir="rtl"] pre {
   display: flex;
   flex: 0 0 auto;
   gap: var(--sp-3);
+  justify-content: space-evenly;
   padding: var(--sp-4) var(--sp-4) 0;
   overflow-x: auto;
   border-bottom: 1px solid var(--border-subtle);
@@ -2497,6 +2498,25 @@ html[dir="rtl"] pre {
   border-color: var(--accent);
   color: var(--accent);
 }
+
+.schedule-dashboard-form {
+  max-width: 420px;
+  margin: 0 0 var(--sp-5);
+  padding: var(--sp-4);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  background: var(--bg-elevated);
+}
+
+.schedule-row-open {
+  display: flex;
+  min-width: 0;
+  flex: 1;
+  align-items: center;
+  gap: var(--sp-3);
+}
+
+.schedule-management-row:hover { background: var(--bg-surface-hover); }
 
 /* ============================================================
    TRACES PANEL

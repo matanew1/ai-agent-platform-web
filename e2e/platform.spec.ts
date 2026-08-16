@@ -126,24 +126,23 @@ test("Hebrew message bubbles self-align right-to-left while the interface stays 
   await expect(page.locator("html")).toHaveAttribute("dir", "ltr");
 });
 
-test("creating a schedule lists it with its next-run time and supports deletion", async ({ page }) => {
-  await page.goto("/agents/cv-expert");
-  await page.getByRole("tab", { name: "Schedules" }).click();
+test("creating a schedule from the Schedules dashboard lists it and supports deletion", async ({ page }) => {
+  await page.goto("/schedules");
   await expect(page.getByText("No schedules yet")).toBeVisible();
 
-  await page.getByLabel("Cron expression").fill("0 8 * * *");
   await page.getByLabel("Message to send").fill("Summarize yesterday's activity.");
   await page.getByRole("button", { name: "Create schedule" }).click();
 
-  await expect(page.getByText("0 8 * * *")).toBeVisible();
   await expect(page.getByText("No schedules yet")).not.toBeVisible();
+  await expect(page.locator(".schedule-management-row")).toHaveCount(1);
+  await expect(page.locator(".schedule-management-row")).toContainText("CV Expert");
 
   await page.getByRole("button", { name: "Delete schedule" }).click();
   await expect(page.getByText("No schedules yet")).toBeVisible();
 });
 
 test("main screens and configuration controls stay within their containers", async ({ page }) => {
-  for (const route of ["/agents", "/sessions", "/documents", "/tools", "/settings", "/agents/cv-expert"]) {
+  for (const route of ["/agents", "/sessions", "/schedules", "/documents", "/tools", "/settings", "/agents/cv-expert"]) {
     await page.goto(route);
     await expect(page.locator("main.app-shell")).toBeVisible();
     const overflowing = await page.evaluate(() => {
