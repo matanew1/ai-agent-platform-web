@@ -14,6 +14,7 @@ const settings = {
 
 async function mockPlatform(page: Page) {
   let savedSettings = { ...settings };
+  const savedSchedules: Array<Record<string, unknown>> = [];
   await page.route("http://localhost:8000/**", async (route) => {
     const request = route.request();
     const url = new URL(request.url());
@@ -29,6 +30,32 @@ async function mockPlatform(page: Page) {
     if (path === "/models") return respond({ provider: "ollama", default_model: "qwen3:8b", models: [{ id: "qwen3:8b", label: "qwen3:8b" }], temperature: { min: 0, max: 1, step: 0.1, default: 0.3 } });
     if (path === "/documents") return respond([]);
     if (path === `/agents/${agent.id}/sessions`) return respond([]);
+    if (path === `/agents/${agent.id}/schedules`) {
+      if (request.method() === "POST") {
+        const values = JSON.parse(request.postData() || "{}");
+        const now = new Date().toISOString();
+        const created = {
+          id: `sched-${savedSchedules.length + 1}`, agent_id: agent.id, enabled: true,
+          next_run_at: new Date(Date.now() + 3_600_000).toISOString(), last_run_at: null, last_run_session_id: null,
+          created_at: now, updated_at: now, ...values,
+        };
+        savedSchedules.push(created);
+        return respond(created, 201);
+      }
+      return respond(savedSchedules);
+    }
+    if (path.startsWith(`/agents/${agent.id}/schedules/`)) {
+      const scheduleId = path.split("/").pop();
+      const index = savedSchedules.findIndex((schedule) => schedule.id === scheduleId);
+      if (request.method() === "DELETE") {
+        if (index >= 0) savedSchedules.splice(index, 1);
+        return route.fulfill({ status: 204 });
+      }
+      if (request.method() === "PATCH" && index >= 0) {
+        savedSchedules[index] = { ...savedSchedules[index], ...JSON.parse(request.postData() || "{}") };
+        return respond(savedSchedules[index]);
+      }
+    }
     if (path === `/agents/${agent.id}/chat/stream`) {
       const message = JSON.parse(request.postData() || "{}").message;
       if (message === "Stop this response") await new Promise((resolve) => setTimeout(resolve, 500));
@@ -99,8 +126,40 @@ test("Hebrew message bubbles self-align right-to-left while the interface stays 
   await expect(page.locator("html")).toHaveAttribute("dir", "ltr");
 });
 
+test("creating a schedule from the Schedules dashboard lists it as a card and supports deletion", async ({ page }) => {
+  await page.goto("/schedules");
+  await expect(page.getByText("No schedules yet")).toBeVisible();
+
+  await page.getByRole("button", { name: "New schedule" }).first().click();
+  await page.getByLabel("Message to send").fill("Summarize yesterday's activity.");
+  await page.getByRole("button", { name: "Create schedule" }).click();
+
+  await expect(page.getByText("No schedules yet")).not.toBeVisible();
+  await expect(page.locator(".schedule-card")).toHaveCount(1);
+  await expect(page.locator(".schedule-card")).toContainText("CV Expert");
+
+  page.once("dialog", (dialog) => void dialog.accept());
+  await page.getByRole("button", { name: "Delete schedule for CV Expert" }).click();
+  await expect(page.getByText("No schedules yet")).toBeVisible();
+});
+
+test("editing a schedule updates its message", async ({ page }) => {
+  await page.goto("/schedules");
+  await page.getByRole("button", { name: "New schedule" }).first().click();
+  await page.getByLabel("Message to send").fill("Summarize yesterday's activity.");
+  await page.getByRole("button", { name: "Create schedule" }).click();
+  await expect(page.locator(".schedule-card")).toHaveCount(1);
+
+  await page.getByRole("button", { name: "Edit schedule for CV Expert" }).click();
+  await expect(page.getByRole("heading", { name: "Edit schedule" })).toBeVisible();
+  await page.getByLabel("Message to send").fill("Summarize this week instead.");
+  await page.getByRole("button", { name: "Save configuration" }).click();
+
+  await expect(page.locator(".schedule-card")).toContainText("Summarize this week instead.");
+});
+
 test("main screens and configuration controls stay within their containers", async ({ page }) => {
-  for (const route of ["/agents", "/sessions", "/documents", "/tools", "/settings", "/agents/cv-expert"]) {
+  for (const route of ["/agents", "/sessions", "/schedules", "/documents", "/tools", "/settings", "/agents/cv-expert"]) {
     await page.goto(route);
     await expect(page.locator("main.app-shell")).toBeVisible();
     const overflowing = await page.evaluate(() => {

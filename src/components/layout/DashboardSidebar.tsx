@@ -1,11 +1,11 @@
-import { Bot, FileText, Layers, MessageSquare } from "lucide-react";
+import { Bot, Clock, FileText, Layers, MessageSquare } from "lucide-react";
 import type { ComponentType } from "react";
 import { Brand } from "../../shared/ui/Brand";
 import { APP_VERSION } from "../../shared/config/version";
 import { useI18n } from "../../shared/i18n/I18nProvider";
 import { SidebarFooter } from "./SidebarFooter";
 
-export type DashboardDestination = "agents" | "sessions" | "documents" | "tools" | "settings";
+export type DashboardDestination = "agents" | "sessions" | "schedules" | "documents" | "tools" | "settings";
 
 export type WorkspaceIdentity = {
   id: string;
@@ -14,7 +14,7 @@ export type WorkspaceIdentity = {
 };
 
 type NavItem = {
-  label: "agents" | "sessions" | "documents" | "tools";
+  label: "agents" | "sessions" | "schedules" | "documents" | "tools";
   destination: DashboardDestination | null;
   icon: ComponentType<{ size?: number; className?: string }>;
 };
@@ -22,6 +22,7 @@ type NavItem = {
 const navigation: NavItem[] = [
   { label: "agents", destination: "agents", icon: Bot },
   { label: "sessions", destination: "sessions", icon: MessageSquare },
+  { label: "schedules", destination: "schedules", icon: Clock },
   { label: "documents", destination: "documents", icon: FileText },
   { label: "tools", destination: "tools", icon: Layers },
 ];

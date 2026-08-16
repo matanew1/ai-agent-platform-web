@@ -11,6 +11,8 @@ import { DocumentsDashboard } from "../features/documents/components/DocumentsDa
 import { SettingsDashboard } from "../features/settings/components/SettingsDashboard";
 import { useDocuments } from "../features/documents/hooks/useDocuments";
 import { useModelCatalog } from "../features/models/hooks/useModelCatalog";
+import { SchedulesDashboard } from "../features/schedules/components/SchedulesDashboard";
+import { useAllSchedules } from "../features/schedules/hooks/useAllSchedules";
 import type { AuthenticatedUser } from "../features/auth/types";
 import { WorkspacePage } from "../pages/workspace/WorkspacePage";
 import type { DashboardDestination } from "../components/layout/DashboardSidebar";
@@ -20,7 +22,7 @@ import { Notice } from "../shared/ui/Notice";
 import { useAppSettings } from "../shared/hooks/useAppSettings";
 import { I18nProvider } from "../shared/i18n/I18nProvider";
 
-type View = "dashboard" | "workspace" | "sessions" | "documents" | "tools" | "settings";
+type View = "dashboard" | "workspace" | "sessions" | "schedules" | "documents" | "tools" | "settings";
 type InspectorTab = "config" | "documents" | "traces";
 
 type Route = { view: View; agentSlug: string | null };
@@ -45,6 +47,7 @@ export default function App({ currentUser, onSignOut }: AppProps) {
     agentIds,
   );
   const documents = useDocuments(currentUser.id, agentsState.setError);
+  const schedules = useAllSchedules(currentUser.id, agentIds);
   const identity = useMemo(() => ({
     id: currentUser.id,
     displayName: currentUser.displayName,
@@ -179,6 +182,22 @@ export default function App({ currentUser, onSignOut }: AppProps) {
           onNewSession={newSession}
           onDeleteSession={sessions.removeSession}
         />
+      ) : route.view === "schedules" ? (
+        <SchedulesDashboard
+          identity={identity}
+          connected={agentsState.connected}
+          agents={agentsState.agents}
+          schedulesByAgent={schedules.schedulesByAgent}
+          loading={schedules.loading}
+          deleting={schedules.deleting}
+          error={schedules.error}
+          onSignOut={onSignOut}
+          onNavigate={navigateDashboard}
+          onCreate={schedules.createSchedule}
+          onUpdate={schedules.updateSchedule}
+          onToggle={(agentId, scheduleId, enabled) => schedules.updateSchedule(agentId, scheduleId, { enabled })}
+          onDelete={(agentId, scheduleId) => void schedules.deleteSchedule(agentId, scheduleId)}
+        />
       ) : route.view === "documents" ? (
         <DocumentsDashboard
           identity={identity}
@@ -254,7 +273,7 @@ function readRoute(): Route {
   const match = window.location.pathname.match(/^\/agents\/([^/]+)\/?$/);
   if (match) return { view: "workspace", agentSlug: decodeURIComponent(match[1]) };
   const view = window.location.pathname.replace(/^\/+|\/+$/g, "");
-  if (view === "sessions" || view === "documents" || view === "tools" || view === "settings") {
+  if (view === "sessions" || view === "schedules" || view === "documents" || view === "tools" || view === "settings") {
     return { view, agentSlug: null };
   }
   return { view: "dashboard", agentSlug: null };

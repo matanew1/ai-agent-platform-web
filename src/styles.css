@@ -1142,6 +1142,7 @@ html[dir="rtl"] .workspace.sidebar-closed .sidebar { transform: translateX(16px)
 
 .sidebar,
 .inspector {
+  min-width: 0;
   min-height: 0;
   background: var(--bg-elevated);
 }
@@ -1348,6 +1349,13 @@ html[dir="rtl"] .agent-list button.active::before { border-radius: 2px 0 0 2px; 
   font-weight: 500;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.scheduled-session-badge {
+  display: inline-block;
+  margin-inline-start: 4px;
+  color: var(--accent);
+  vertical-align: -1px;
 }
 
 .session-list span {
@@ -2081,18 +2089,22 @@ html[dir="rtl"] pre {
 .inspector-tabs {
   display: flex;
   flex: 0 0 auto;
-  gap: var(--sp-5);
-  padding: var(--sp-4) var(--sp-5) 0;
+  gap: var(--sp-3);
+  justify-content: space-evenly;
+  padding: var(--sp-4) var(--sp-4) 0;
+  overflow-x: auto;
   border-bottom: 1px solid var(--border-subtle);
 }
 
 .inspector-tabs button {
+  flex: 0 0 auto;
   padding: 0 0 10px;
   border: 0;
   background: transparent;
   color: var(--text-muted);
   font-size: 12.5px;
   font-weight: 500;
+  white-space: nowrap;
   transition: color 100ms ease;
 }
 
@@ -2427,6 +2439,162 @@ html[dir="rtl"] pre {
 
 .document-list strong { font-size: 11.5px; }
 .document-list small { margin-top: 2px; color: var(--text-muted); font: 10px var(--font-mono); }
+
+/* ============================================================
+   SCHEDULES DASHBOARD
+   ============================================================ */
+.schedule-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  align-content: start;
+  gap: var(--sp-4);
+  max-width: var(--content-max);
+  padding: var(--sp-5) var(--sp-6) var(--sp-8);
+}
+
+.schedule-dashboard-error { padding: 0 var(--sp-6); }
+
+.schedule-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  padding: var(--sp-5);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-lg);
+  background: var(--bg-surface);
+  box-shadow: var(--shadow-sm);
+  transition: border-color 150ms ease, background 150ms ease;
+}
+
+.schedule-card:hover { border-color: rgba(75, 125, 255, 0.35); background: var(--bg-surface-hover); }
+.schedule-card-paused { opacity: 0.72; }
+
+.schedule-card-head {
+  display: flex;
+  min-width: 0;
+  align-items: flex-start;
+  gap: var(--sp-3);
+}
+
+.schedule-card-head > div {
+  min-width: 0;
+  flex: 1;
+}
+
+.schedule-card-head small {
+  display: -webkit-box;
+  overflow: hidden;
+  margin-top: 3px;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  color: var(--text-secondary);
+  font-size: 12px;
+  line-height: 1.4;
+}
+
+.schedule-status-pill {
+  flex: 0 0 auto;
+  padding: 2px 8px;
+  border-radius: var(--radius-sm);
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--text-muted);
+  font: 500 10px var(--font-mono);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.schedule-status-pill.on { background: var(--accent-subtle); color: var(--accent); }
+
+.schedule-card > p {
+  display: -webkit-box;
+  min-height: 38px;
+  overflow: hidden;
+  margin: var(--sp-3) 0 0;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  color: var(--text-secondary);
+  font-size: 13px;
+  line-height: 1.5;
+  text-wrap: pretty;
+}
+
+.schedule-card footer {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: var(--sp-4);
+}
+
+.schedule-card footer span {
+  padding: 4px 8px;
+  border-radius: var(--radius-sm);
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--text-muted);
+  font: 500 10px var(--font-mono);
+}
+
+.schedule-card-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sp-2);
+  margin-top: var(--sp-4);
+  padding-top: var(--sp-3);
+  border-top: 1px solid var(--border-subtle);
+}
+
+.schedule-toggle {
+  flex: 0 0 auto;
+  padding: 5px 10px;
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--text-muted);
+  font: 500 10px var(--font-mono);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.schedule-toggle[aria-pressed="true"] { border-color: var(--accent); color: var(--accent); }
+
+.schedule-card-icon-actions { display: flex; flex: 0 0 auto; gap: 2px; }
+
+.schedule-modal-agent {
+  margin: -6px 0 var(--sp-4);
+  color: var(--text-muted);
+  font: 500 12px var(--font-mono);
+}
+
+.schedule-icon-button {
+  display: grid;
+  width: 28px;
+  height: 28px;
+  flex: 0 0 auto;
+  place-items: center;
+  border: 0;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--text-muted);
+  transition: color 120ms ease, background 120ms ease;
+}
+
+.schedule-icon-button:hover:not(:disabled) { background: var(--accent-subtle); color: var(--accent); }
+.schedule-icon-button-danger:hover:not(:disabled) { background: rgba(255, 91, 91, 0.12); color: var(--danger); }
+
+.skeleton-card {
+  min-height: 140px;
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+  background: var(--bg-surface);
+}
+
+.schedule-preview {
+  margin: -8px 0 var(--sp-2);
+  color: var(--text-muted);
+  font-size: 11.5px;
+  font-style: italic;
+}
 
 /* ============================================================
    TRACES PANEL
