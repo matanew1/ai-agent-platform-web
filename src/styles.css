@@ -2566,7 +2566,7 @@ html[dir="rtl"] pre {
   font: 500 12px var(--font-mono);
 }
 
-.schedule-delete {
+.schedule-icon-button {
   display: grid;
   width: 28px;
   height: 28px;
@@ -2579,7 +2579,8 @@ html[dir="rtl"] pre {
   transition: color 120ms ease, background 120ms ease;
 }
 
-.schedule-delete:hover:not(:disabled) { background: rgba(255, 91, 91, 0.12); color: var(--danger); }
+.schedule-icon-button:hover:not(:disabled) { background: var(--accent-subtle); color: var(--accent); }
+.schedule-icon-button-danger:hover:not(:disabled) { background: rgba(255, 91, 91, 0.12); color: var(--danger); }
 
 .skeleton-card {
   min-height: 140px;

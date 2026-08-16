@@ -21,7 +21,7 @@ type SchedulesDashboardProps = {
   onNavigate: (destination: DashboardDestination) => void;
   onCreate: (agentId: string, values: { cron_expression: string; trigger_message: string }) => Promise<unknown>;
   onUpdate: (agentId: string, scheduleId: string, changes: ScheduleChanges) => Promise<unknown>;
-  onToggle: (agentId: string, scheduleId: string, enabled: boolean) => void;
+  onToggle: (agentId: string, scheduleId: string, enabled: boolean) => Promise<unknown>;
   onDelete: (agentId: string, scheduleId: string) => void;
 };
 
@@ -43,6 +43,16 @@ export function SchedulesDashboard({
   const { t, locale } = useI18n();
   const [showCreate, setShowCreate] = useState(false);
   const [editing, setEditing] = useState<{ agent: Agent; schedule: Schedule } | null>(null);
+  const [toggling, setToggling] = useState<string | null>(null);
+
+  const toggle = async (agentId: string, schedule: Schedule) => {
+    setToggling(schedule.id);
+    try {
+      await onToggle(agentId, schedule.id, !schedule.enabled);
+    } finally {
+      setToggling(null);
+    }
+  };
 
   const entries = useMemo(() => agents.flatMap((agent, agentIndex) => (
     (schedulesByAgent[agent.id] || []).map((schedule) => ({ agent, agentIndex, schedule }))
@@ -52,6 +62,12 @@ export function SchedulesDashboard({
   const summary = loading
     ? t("loadingSchedules")
     : t("scheduleSummary", { active: String(activeCount), total: String(entries.length), agents: String(agents.length) });
+
+  const requestDelete = (agent: Agent, schedule: Schedule) => {
+    if (window.confirm(t("deleteScheduleConfirm", { agent: agent.name, cron: describeCron(schedule.cron_expression, t) }))) {
+      onDelete(agent.id, schedule.id);
+    }
+  };
 
   return (
     <section className="dashboard-layout">
@@ -129,26 +145,27 @@ export function SchedulesDashboard({
                   type="button"
                   className="schedule-toggle"
                   aria-pressed={schedule.enabled}
+                  disabled={toggling === schedule.id}
                   title={schedule.enabled ? t("disableSchedule") : t("enableSchedule")}
-                  onClick={() => onToggle(agent.id, schedule.id, !schedule.enabled)}
+                  onClick={() => toggle(agent.id, schedule)}
                 >
                   {schedule.enabled ? t("disableSchedule") : t("enableSchedule")}
                 </button>
                 <span className="schedule-card-icon-actions">
                   <button
                     type="button"
-                    className="schedule-delete"
-                    aria-label={t("editSchedule")}
+                    className="schedule-icon-button"
+                    aria-label={t("editScheduleFor", { agent: agent.name })}
                     onClick={() => setEditing({ agent, schedule })}
                   >
                     <Pencil size={14} />
                   </button>
                   <button
                     type="button"
-                    className="schedule-delete"
+                    className="schedule-icon-button schedule-icon-button-danger"
                     disabled={deleting === schedule.id}
-                    aria-label={t("deleteSchedule")}
-                    onClick={() => onDelete(agent.id, schedule.id)}
+                    aria-label={t("deleteScheduleFor", { agent: agent.name })}
+                    onClick={() => requestDelete(agent, schedule)}
                   >
                     {deleting === schedule.id ? "…" : <Trash2 size={14} />}
                   </button>

@@ -45,6 +45,16 @@ export function ScheduleModal({
     return () => window.removeEventListener("keydown", closeOnEscape);
   }, [onClose]);
 
+  // onCreate/onUpdate set the hook's error state as a side effect of the
+  // same call this awaits, but that state update lands in the *next*
+  // render - reading the `error` prop synchronously right after `await`
+  // below would see the value from the render that started this submit,
+  // not the fresh one. Mirroring it via effect picks up the real message
+  // once the parent actually re-renders with it.
+  useEffect(() => {
+    if (error) setLocalError(error);
+  }, [error]);
+
   const selectPreset = (id: string) => {
     setPresetId(id);
     const preset = CRON_PRESETS.find((candidate) => candidate.id === id);
@@ -60,7 +70,7 @@ export function ScheduleModal({
       const values = { cron_expression: cronExpression, trigger_message: triggerMessage };
       const result = editing ? await onUpdate?.(values) : await onCreate?.(agentId, values);
       if (!result) {
-        setLocalError(error || t("scheduleCreateFailed"));
+        setLocalError((current) => current || t("scheduleCreateFailed"));
         return;
       }
       onClose();
@@ -80,7 +90,7 @@ export function ScheduleModal({
         ) : (
           <label htmlFor="schedule-modal-agent">
             {t("agentForSchedule")}
-            <select id="schedule-modal-agent" dir="ltr" value={agentId} disabled={saving || !agents.length} onChange={(event) => setAgentId(event.target.value)}>
+            <select id="schedule-modal-agent" dir="ltr" autoFocus value={agentId} disabled={saving || !agents.length} onChange={(event) => setAgentId(event.target.value)}>
               {!agents.length && <option value="">{t("noAgents")}</option>}
               {agents.map((agent) => <option key={agent.id} value={agent.id}>{agent.name}</option>)}
             </select>
@@ -88,7 +98,7 @@ export function ScheduleModal({
         )}
         <label htmlFor="schedule-modal-preset">
           {t("cronExpression")}
-          <select id="schedule-modal-preset" dir="ltr" value={presetId} disabled={saving} onChange={(event) => selectPreset(event.target.value)}>
+          <select id="schedule-modal-preset" dir="ltr" autoFocus={editing} value={presetId} disabled={saving} onChange={(event) => selectPreset(event.target.value)}>
             {CRON_PRESETS.map((preset) => <option key={preset.id} value={preset.id}>{t(preset.labelKey)}</option>)}
             <option value={CUSTOM_PRESET}>{t("presetCustom")}</option>
           </select>

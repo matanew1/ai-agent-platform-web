@@ -195,7 +195,7 @@ export default function App({ currentUser, onSignOut }: AppProps) {
           onNavigate={navigateDashboard}
           onCreate={schedules.createSchedule}
           onUpdate={schedules.updateSchedule}
-          onToggle={(agentId, scheduleId, enabled) => void schedules.updateSchedule(agentId, scheduleId, { enabled })}
+          onToggle={(agentId, scheduleId, enabled) => schedules.updateSchedule(agentId, scheduleId, { enabled })}
           onDelete={(agentId, scheduleId) => void schedules.deleteSchedule(agentId, scheduleId)}
         />
       ) : route.view === "documents" ? (

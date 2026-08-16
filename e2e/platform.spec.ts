@@ -138,7 +138,8 @@ test("creating a schedule from the Schedules dashboard lists it as a card and su
   await expect(page.locator(".schedule-card")).toHaveCount(1);
   await expect(page.locator(".schedule-card")).toContainText("CV Expert");
 
-  await page.getByRole("button", { name: "Delete schedule" }).click();
+  page.once("dialog", (dialog) => void dialog.accept());
+  await page.getByRole("button", { name: "Delete schedule for CV Expert" }).click();
   await expect(page.getByText("No schedules yet")).toBeVisible();
 });
 
@@ -149,7 +150,7 @@ test("editing a schedule updates its message", async ({ page }) => {
   await page.getByRole("button", { name: "Create schedule" }).click();
   await expect(page.locator(".schedule-card")).toHaveCount(1);
 
-  await page.getByRole("button", { name: "Edit schedule" }).click();
+  await page.getByRole("button", { name: "Edit schedule for CV Expert" }).click();
   await expect(page.getByRole("heading", { name: "Edit schedule" })).toBeVisible();
   await page.getByLabel("Message to send").fill("Summarize this week instead.");
   await page.getByRole("button", { name: "Save configuration" }).click();
