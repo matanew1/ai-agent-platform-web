@@ -126,19 +126,35 @@ test("Hebrew message bubbles self-align right-to-left while the interface stays 
   await expect(page.locator("html")).toHaveAttribute("dir", "ltr");
 });
 
-test("creating a schedule from the Schedules dashboard lists it and supports deletion", async ({ page }) => {
+test("creating a schedule from the Schedules dashboard lists it as a card and supports deletion", async ({ page }) => {
   await page.goto("/schedules");
   await expect(page.getByText("No schedules yet")).toBeVisible();
 
+  await page.getByRole("button", { name: "New schedule" }).first().click();
   await page.getByLabel("Message to send").fill("Summarize yesterday's activity.");
   await page.getByRole("button", { name: "Create schedule" }).click();
 
   await expect(page.getByText("No schedules yet")).not.toBeVisible();
-  await expect(page.locator(".schedule-management-row")).toHaveCount(1);
-  await expect(page.locator(".schedule-management-row")).toContainText("CV Expert");
+  await expect(page.locator(".schedule-card")).toHaveCount(1);
+  await expect(page.locator(".schedule-card")).toContainText("CV Expert");
 
   await page.getByRole("button", { name: "Delete schedule" }).click();
   await expect(page.getByText("No schedules yet")).toBeVisible();
+});
+
+test("editing a schedule updates its message", async ({ page }) => {
+  await page.goto("/schedules");
+  await page.getByRole("button", { name: "New schedule" }).first().click();
+  await page.getByLabel("Message to send").fill("Summarize yesterday's activity.");
+  await page.getByRole("button", { name: "Create schedule" }).click();
+  await expect(page.locator(".schedule-card")).toHaveCount(1);
+
+  await page.getByRole("button", { name: "Edit schedule" }).click();
+  await expect(page.getByRole("heading", { name: "Edit schedule" })).toBeVisible();
+  await page.getByLabel("Message to send").fill("Summarize this week instead.");
+  await page.getByRole("button", { name: "Save configuration" }).click();
+
+  await expect(page.locator(".schedule-card")).toContainText("Summarize this week instead.");
 });
 
 test("main screens and configuration controls stay within their containers", async ({ page }) => {

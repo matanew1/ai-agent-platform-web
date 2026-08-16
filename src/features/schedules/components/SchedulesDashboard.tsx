@@ -1,13 +1,13 @@
-import { FormEvent, useEffect, useMemo, useState } from "react";
-import { Clock, Trash2 } from "lucide-react";
+import { useMemo, useState } from "react";
+import { Pencil, Plus, Sparkles, Trash2 } from "lucide-react";
 
-import { type DashboardDestination, type WorkspaceIdentity } from "../../../components/layout/DashboardSidebar";
-import { ManagementPage } from "../../../components/layout/ManagementPage";
+import { DashboardSidebar, type DashboardDestination, type WorkspaceIdentity } from "../../../components/layout/DashboardSidebar";
 import { Avatar } from "../../../shared/ui/Avatar";
 import { useI18n } from "../../../shared/i18n/I18nProvider";
 import type { Agent } from "../../agents/types";
-import { CRON_PRESETS, CUSTOM_PRESET, describeCron, presetIdForCron } from "../cronPresets";
-import type { Schedule } from "../types";
+import { describeCron } from "../cronPresets";
+import type { Schedule, ScheduleChanges } from "../types";
+import { ScheduleModal } from "./ScheduleModal";
 
 type SchedulesDashboardProps = {
   identity: WorkspaceIdentity;
@@ -20,6 +20,7 @@ type SchedulesDashboardProps = {
   onSignOut?: () => void;
   onNavigate: (destination: DashboardDestination) => void;
   onCreate: (agentId: string, values: { cron_expression: string; trigger_message: string }) => Promise<unknown>;
+  onUpdate: (agentId: string, scheduleId: string, changes: ScheduleChanges) => Promise<unknown>;
   onToggle: (agentId: string, scheduleId: string, enabled: boolean) => void;
   onDelete: (agentId: string, scheduleId: string) => void;
 };
@@ -35,192 +36,151 @@ export function SchedulesDashboard({
   onSignOut,
   onNavigate,
   onCreate,
+  onUpdate,
   onToggle,
   onDelete,
 }: SchedulesDashboardProps) {
   const { t, locale } = useI18n();
-  const [formAgentId, setFormAgentId] = useState(agents[0]?.id || "");
-  const [presetId, setPresetId] = useState(presetIdForCron(CRON_PRESETS[1].cron));
-  const [cronExpression, setCronExpression] = useState(CRON_PRESETS[1].cron);
-  const [triggerMessage, setTriggerMessage] = useState("");
-  const [creating, setCreating] = useState(false);
-  const [createError, setCreateError] = useState<string | null>(null);
-
-  useEffect(() => {
-    if (!agents.some((agent) => agent.id === formAgentId)) setFormAgentId(agents[0]?.id || "");
-  }, [agents, formAgentId]);
+  const [showCreate, setShowCreate] = useState(false);
+  const [editing, setEditing] = useState<{ agent: Agent; schedule: Schedule } | null>(null);
 
   const entries = useMemo(() => agents.flatMap((agent, agentIndex) => (
     (schedulesByAgent[agent.id] || []).map((schedule) => ({ agent, agentIndex, schedule }))
   )).sort((left, right) => Date.parse(left.schedule.next_run_at) - Date.parse(right.schedule.next_run_at)), [agents, schedulesByAgent]);
 
+  const activeCount = entries.filter(({ schedule }) => schedule.enabled).length;
   const summary = loading
     ? t("loadingSchedules")
-    : t("scheduleCount", { schedules: String(entries.length), agents: String(agents.length) });
-
-  const selectPreset = (id: string) => {
-    setPresetId(id);
-    const preset = CRON_PRESETS.find((candidate) => candidate.id === id);
-    if (preset) setCronExpression(preset.cron);
-  };
-
-  const submit = async (event: FormEvent) => {
-    event.preventDefault();
-    if (!formAgentId) return;
-    setCreating(true);
-    setCreateError(null);
-    try {
-      const created = await onCreate(formAgentId, { cron_expression: cronExpression, trigger_message: triggerMessage });
-      if (!created) {
-        setCreateError(error || t("scheduleCreateFailed"));
-        return;
-      }
-      setTriggerMessage("");
-    } finally {
-      setCreating(false);
-    }
-  };
+    : t("scheduleSummary", { active: String(activeCount), total: String(entries.length), agents: String(agents.length) });
 
   return (
-    <ManagementPage
-      identity={identity}
-      connected={connected}
-      activeDestination="schedules"
-      title={t("schedules")}
-      summary={summary}
-      onSignOut={onSignOut}
-      onNavigate={onNavigate}
-    >
-      <form className="schedule-form schedule-dashboard-form" onSubmit={submit}>
-        <label htmlFor="schedule-dashboard-agent">
-          {t("agentForSchedule")}
-          <span className="model-select-wrap">
-            <select
-              id="schedule-dashboard-agent"
-              dir="ltr"
-              value={formAgentId}
-              disabled={!agents.length || creating}
-              onChange={(event) => setFormAgentId(event.target.value)}
-            >
-              {!agents.length && <option value="">{t("noAgents")}</option>}
-              {agents.map((agent) => <option key={agent.id} value={agent.id}>{agent.name}</option>)}
-            </select>
-            <span aria-hidden="true">⌄</span>
-          </span>
-        </label>
-        <label htmlFor="schedule-dashboard-preset">
-          {t("cronExpression")}
-          <span className="model-select-wrap">
-            <select
-              id="schedule-dashboard-preset"
-              dir="ltr"
-              value={presetId}
-              disabled={creating}
-              onChange={(event) => selectPreset(event.target.value)}
-            >
-              {CRON_PRESETS.map((preset) => (
-                <option key={preset.id} value={preset.id}>{t(preset.labelKey)}</option>
-              ))}
-              <option value={CUSTOM_PRESET}>{t("presetCustom")}</option>
-            </select>
-            <span aria-hidden="true">⌄</span>
-          </span>
-        </label>
-        {presetId === CUSTOM_PRESET && (
-          <label>
-            {t("customCronExpression")}
-            <input
-              dir="ltr"
-              value={cronExpression}
-              maxLength={120}
-              placeholder={t("cronExpressionPlaceholder")}
-              disabled={creating}
-              onChange={(event) => setCronExpression(event.target.value)}
-              required
-            />
-          </label>
-        )}
-        <p className="panel-footnote">{describeCron(cronExpression, t)}</p>
-        <label>
-          {t("triggerMessage")}
-          <textarea
-            dir="auto"
-            value={triggerMessage}
-            maxLength={8000}
-            placeholder={t("triggerMessagePlaceholder")}
-            disabled={creating}
-            onChange={(event) => setTriggerMessage(event.target.value)}
-            required
-          />
-        </label>
-        {createError && <p className="panel-footnote warning">{createError}</p>}
-        <button className="primary wide" disabled={creating || !formAgentId || !cronExpression.trim() || !triggerMessage.trim()}>
-          {creating ? t("creatingSchedule") : t("createSchedule")}
-        </button>
-      </form>
-
-      {error && <p className="panel-footnote warning">{error}</p>}
-
-      {loading && entries.length === 0 ? (
-        <div className="skeleton">
-          <div className="skeleton-list">
-            {Array.from({ length: 3 }).map((_, i) => (
-              <div key={i} className="skeleton-list-row">
-                <div className="skeleton-block" style={{ width: "28px", height: "28px", borderRadius: "6px" }} />
-                <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: "6px" }}>
-                  <div className="skeleton-block skeleton-line-sm" />
-                  <div className="skeleton-block skeleton-line-md" style={{ height: "10px", width: "30%" }} />
-                </div>
-              </div>
-            ))}
+    <section className="dashboard-layout">
+      <DashboardSidebar
+        identity={identity}
+        connected={connected}
+        activeDestination="schedules"
+        onSignOut={onSignOut}
+        onNavigate={onNavigate}
+      />
+      <div className="dashboard-main">
+        <header className="dashboard-header">
+          <div>
+            <h1>{t("schedules")}</h1>
+            <p>{summary}</p>
           </div>
-        </div>
-      ) : entries.length ? (
-        <div className="management-list" aria-label={t("schedules")}>
+          <div className="dashboard-actions">
+            <button className="primary" type="button" disabled={!agents.length} onClick={() => setShowCreate(true)}>
+              <Plus size={15} /> {t("newSchedule")}
+            </button>
+          </div>
+        </header>
+
+        {error && <p className="panel-footnote warning schedule-dashboard-error">{error}</p>}
+
+        <div className="schedule-grid">
+          {!loading && entries.length === 0 && (
+            <section className="workspace-onboarding">
+              <span className="workspace-onboarding-mark"><Sparkles size={20} /></span>
+              <div>
+                <p className="eyebrow">{t("startHere")}</p>
+                <h2>{t("noSchedules")}</h2>
+                <p>{t("noSchedulesHint")}</p>
+              </div>
+              <button className="primary" type="button" disabled={!agents.length} onClick={() => setShowCreate(true)}>
+                {t("newSchedule")} <Plus size={15} />
+              </button>
+            </section>
+          )}
+
+          {loading && entries.length === 0 && Array.from({ length: 3 }).map((_, i) => (
+            <div className="schedule-card skeleton-card" key={i} aria-hidden="true">
+              <div className="skeleton-block" style={{ width: "32px", height: "32px", borderRadius: "8px" }} />
+              <div className="skeleton-block skeleton-line-sm" style={{ marginTop: 12 }} />
+              <div className="skeleton-block skeleton-line-md" style={{ height: "10px", width: "60%", marginTop: 8 }} />
+            </div>
+          ))}
+
           {entries.map(({ agent, agentIndex, schedule }) => (
-            <article className="management-row schedule-management-row" key={`${agent.id}:${schedule.id}`}>
-              <span className="schedule-row-open">
-                <Avatar name={agent.name} small tone={agentIndex} />
-                <span className="management-row-copy">
-                  <strong dir="auto">{describeCron(schedule.cron_expression, t)}</strong>
-                  <small>
-                    {agent.name} ·{" "}
-                    {schedule.enabled
-                      ? t("nextRun", { time: formatRelative(schedule.next_run_at, locale) })
-                      : t("scheduleDisabled")}
-                    {schedule.last_run_at ? ` · ${t("lastRun", { time: formatRelative(schedule.last_run_at, locale) })}` : ""}
-                  </small>
+            <article className={`schedule-card ${schedule.enabled ? "" : "schedule-card-paused"}`} key={`${agent.id}:${schedule.id}`}>
+              <header className="schedule-card-head">
+                <Avatar name={agent.name} tone={agentIndex} />
+                <div>
+                  <div className="agent-card-title">
+                    <h2>{agent.name}</h2>
+                    {schedule.enabled && <i />}
+                  </div>
+                  <small>{describeCron(schedule.cron_expression, t)}</small>
+                </div>
+                <span className={`schedule-status-pill ${schedule.enabled ? "on" : ""}`}>
+                  {schedule.enabled ? t("enabled") : t("disabledLabel")}
                 </span>
-              </span>
-              <button
-                type="button"
-                className="schedule-toggle"
-                aria-pressed={schedule.enabled}
-                title={schedule.enabled ? t("disableSchedule") : t("enableSchedule")}
-                onClick={() => onToggle(agent.id, schedule.id, !schedule.enabled)}
-              >
-                {schedule.enabled ? t("enabled") : t("disabledLabel")}
-              </button>
-              <button
-                className="row-action danger"
-                type="button"
-                disabled={deleting === schedule.id}
-                aria-label={t("deleteSchedule")}
-                onClick={() => onDelete(agent.id, schedule.id)}
-              >
-                {deleting === schedule.id ? t("deleting") : <Trash2 size={14} />}
-              </button>
+              </header>
+              <p>{schedule.trigger_message}</p>
+              <footer>
+                <span>
+                  {schedule.enabled
+                    ? t("nextRun", { time: formatRelative(schedule.next_run_at, locale) })
+                    : t("scheduleDisabled")}
+                </span>
+                {schedule.last_run_at && <span>{t("lastRun", { time: formatRelative(schedule.last_run_at, locale) })}</span>}
+              </footer>
+              <div className="schedule-card-actions">
+                <button
+                  type="button"
+                  className="schedule-toggle"
+                  aria-pressed={schedule.enabled}
+                  title={schedule.enabled ? t("disableSchedule") : t("enableSchedule")}
+                  onClick={() => onToggle(agent.id, schedule.id, !schedule.enabled)}
+                >
+                  {schedule.enabled ? t("disableSchedule") : t("enableSchedule")}
+                </button>
+                <span className="schedule-card-icon-actions">
+                  <button
+                    type="button"
+                    className="schedule-delete"
+                    aria-label={t("editSchedule")}
+                    onClick={() => setEditing({ agent, schedule })}
+                  >
+                    <Pencil size={14} />
+                  </button>
+                  <button
+                    type="button"
+                    className="schedule-delete"
+                    disabled={deleting === schedule.id}
+                    aria-label={t("deleteSchedule")}
+                    onClick={() => onDelete(agent.id, schedule.id)}
+                  >
+                    {deleting === schedule.id ? "…" : <Trash2 size={14} />}
+                  </button>
+                </span>
+              </div>
             </article>
           ))}
         </div>
-      ) : (
-        <div className="management-empty">
-          <span className="empty-mark"><Clock size={20} /></span>
-          <h2>{t("noSchedules")}</h2>
-          <p>{t("noSchedulesHint")}</p>
-        </div>
+      </div>
+
+      {showCreate && (
+        <ScheduleModal
+          agents={agents}
+          defaultAgentId={agents[0]?.id || ""}
+          error={error}
+          onClose={() => setShowCreate(false)}
+          onCreate={onCreate}
+        />
       )}
-    </ManagementPage>
+
+      {editing && (
+        <ScheduleModal
+          agents={agents}
+          defaultAgentId={editing.agent.id}
+          schedule={editing.schedule}
+          scheduleAgentName={editing.agent.name}
+          error={error}
+          onClose={() => setEditing(null)}
+          onUpdate={(values) => onUpdate(editing.agent.id, editing.schedule.id, values)}
+        />
+      )}
+    </section>
   );
 }
 
