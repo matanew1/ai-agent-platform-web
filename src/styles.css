@@ -1142,6 +1142,7 @@ html[dir="rtl"] .workspace.sidebar-closed .sidebar { transform: translateX(16px)
 
 .sidebar,
 .inspector {
+  min-width: 0;
   min-height: 0;
   background: var(--bg-elevated);
 }
@@ -1348,6 +1349,13 @@ html[dir="rtl"] .agent-list button.active::before { border-radius: 2px 0 0 2px; 
   font-weight: 500;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.scheduled-session-badge {
+  display: inline-block;
+  margin-inline-start: 4px;
+  color: var(--accent);
+  vertical-align: -1px;
 }
 
 .session-list span {
@@ -2081,18 +2089,21 @@ html[dir="rtl"] pre {
 .inspector-tabs {
   display: flex;
   flex: 0 0 auto;
-  gap: var(--sp-5);
-  padding: var(--sp-4) var(--sp-5) 0;
+  gap: var(--sp-3);
+  padding: var(--sp-4) var(--sp-4) 0;
+  overflow-x: auto;
   border-bottom: 1px solid var(--border-subtle);
 }
 
 .inspector-tabs button {
+  flex: 0 0 auto;
   padding: 0 0 10px;
   border: 0;
   background: transparent;
   color: var(--text-muted);
   font-size: 12.5px;
   font-weight: 500;
+  white-space: nowrap;
   transition: color 100ms ease;
 }
 
@@ -2427,6 +2438,65 @@ html[dir="rtl"] pre {
 
 .document-list strong { font-size: 11.5px; }
 .document-list small { margin-top: 2px; color: var(--text-muted); font: 10px var(--font-mono); }
+
+/* ============================================================
+   SCHEDULE PANEL (inspector)
+   ============================================================ */
+.schedule-form {
+  display: grid;
+  gap: var(--sp-3);
+  margin-bottom: var(--sp-4);
+}
+
+.schedule-form label {
+  display: block;
+  color: var(--text-secondary);
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.schedule-form input,
+.schedule-form textarea {
+  display: block;
+  width: 100%;
+  margin-top: 6px;
+  padding: 9px 10px;
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-md);
+  outline: 0;
+  background: var(--bg-input);
+  color: var(--text-primary);
+  font-size: 13px;
+  transition: border-color 120ms ease;
+}
+
+.schedule-form input:focus,
+.schedule-form textarea:focus { border-color: var(--accent); }
+
+.schedule-form textarea {
+  min-height: 70px;
+  resize: vertical;
+  line-height: 1.5;
+}
+
+.schedule-list > div { align-items: center; }
+
+.schedule-toggle {
+  flex: 0 0 auto;
+  padding: 3px 8px;
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--text-muted);
+  font: 500 10px var(--font-mono);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.schedule-toggle[aria-pressed="true"] {
+  border-color: var(--accent);
+  color: var(--accent);
+}
 
 /* ============================================================
    TRACES PANEL

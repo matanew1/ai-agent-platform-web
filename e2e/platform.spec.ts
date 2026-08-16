@@ -14,6 +14,7 @@ const settings = {
 
 async function mockPlatform(page: Page) {
   let savedSettings = { ...settings };
+  const savedSchedules: Array<Record<string, unknown>> = [];
   await page.route("http://localhost:8000/**", async (route) => {
     const request = route.request();
     const url = new URL(request.url());
@@ -29,6 +30,32 @@ async function mockPlatform(page: Page) {
     if (path === "/models") return respond({ provider: "ollama", default_model: "qwen3:8b", models: [{ id: "qwen3:8b", label: "qwen3:8b" }], temperature: { min: 0, max: 1, step: 0.1, default: 0.3 } });
     if (path === "/documents") return respond([]);
     if (path === `/agents/${agent.id}/sessions`) return respond([]);
+    if (path === `/agents/${agent.id}/schedules`) {
+      if (request.method() === "POST") {
+        const values = JSON.parse(request.postData() || "{}");
+        const now = new Date().toISOString();
+        const created = {
+          id: `sched-${savedSchedules.length + 1}`, agent_id: agent.id, enabled: true,
+          next_run_at: new Date(Date.now() + 3_600_000).toISOString(), last_run_at: null, last_run_session_id: null,
+          created_at: now, updated_at: now, ...values,
+        };
+        savedSchedules.push(created);
+        return respond(created, 201);
+      }
+      return respond(savedSchedules);
+    }
+    if (path.startsWith(`/agents/${agent.id}/schedules/`)) {
+      const scheduleId = path.split("/").pop();
+      const index = savedSchedules.findIndex((schedule) => schedule.id === scheduleId);
+      if (request.method() === "DELETE") {
+        if (index >= 0) savedSchedules.splice(index, 1);
+        return route.fulfill({ status: 204 });
+      }
+      if (request.method() === "PATCH" && index >= 0) {
+        savedSchedules[index] = { ...savedSchedules[index], ...JSON.parse(request.postData() || "{}") };
+        return respond(savedSchedules[index]);
+      }
+    }
     if (path === `/agents/${agent.id}/chat/stream`) {
       const message = JSON.parse(request.postData() || "{}").message;
       if (message === "Stop this response") await new Promise((resolve) => setTimeout(resolve, 500));
@@ -97,6 +124,22 @@ test("Hebrew message bubbles self-align right-to-left while the interface stays 
   await expect(bubble).toHaveAttribute("dir", "auto");
   await expect(bubble).toHaveCSS("direction", "rtl");
   await expect(page.locator("html")).toHaveAttribute("dir", "ltr");
+});
+
+test("creating a schedule lists it with its next-run time and supports deletion", async ({ page }) => {
+  await page.goto("/agents/cv-expert");
+  await page.getByRole("tab", { name: "Schedules" }).click();
+  await expect(page.getByText("No schedules yet")).toBeVisible();
+
+  await page.getByLabel("Cron expression").fill("0 8 * * *");
+  await page.getByLabel("Message to send").fill("Summarize yesterday's activity.");
+  await page.getByRole("button", { name: "Create schedule" }).click();
+
+  await expect(page.getByText("0 8 * * *")).toBeVisible();
+  await expect(page.getByText("No schedules yet")).not.toBeVisible();
+
+  await page.getByRole("button", { name: "Delete schedule" }).click();
+  await expect(page.getByText("No schedules yet")).toBeVisible();
 });
 
 test("main screens and configuration controls stay within their containers", async ({ page }) => {

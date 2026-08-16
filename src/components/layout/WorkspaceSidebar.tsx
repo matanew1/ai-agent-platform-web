@@ -1,6 +1,7 @@
-import { Plus, Trash2 } from "lucide-react";
+import { Clock, Plus, Trash2 } from "lucide-react";
 import type { Agent } from "../../features/agents/types";
 import type { Session } from "../../features/chat/types";
+import { isScheduledSessionId } from "../../features/schedules/types";
 import { Avatar } from "../../shared/ui/Avatar";
 import { Brand } from "../../shared/ui/Brand";
 import { APP_VERSION } from "../../shared/config/version";
@@ -55,7 +56,10 @@ export function WorkspaceSidebar(props: WorkspaceSidebarProps) {
           {props.sessions.map((session) => (
             <div className={`session-item ${session.id === props.selectedSessionId ? "active" : ""}`} key={session.id}>
               <button className="session-select" onClick={() => props.onSelectSession(session.id)}>
-                <strong>{session.title}</strong>
+                <strong>
+                  {session.title}
+                  {isScheduledSessionId(session.id) && <Clock className="scheduled-session-badge" size={11} aria-label={t("scheduledRun")} />}
+                </strong>
                 <span>{session.messages.length} messages · {formatSessionDate(session.updatedAt)}</span>
               </button>
               <button

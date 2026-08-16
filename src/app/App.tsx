@@ -21,7 +21,7 @@ import { useAppSettings } from "../shared/hooks/useAppSettings";
 import { I18nProvider } from "../shared/i18n/I18nProvider";
 
 type View = "dashboard" | "workspace" | "sessions" | "documents" | "tools" | "settings";
-type InspectorTab = "config" | "documents" | "traces";
+type InspectorTab = "config" | "documents" | "traces" | "schedule";
 
 type Route = { view: View; agentSlug: string | null };
 

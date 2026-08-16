@@ -12,11 +12,13 @@ import type { IndexedChatDocument } from "../../features/chat/types";
 import { DocumentsPanel } from "../../features/documents/components/DocumentsPanel";
 import type { IndexedDocument } from "../../features/documents/types";
 import type { ModelCatalog } from "../../features/models/types";
+import { SchedulePanel } from "../../features/schedules/components/SchedulePanel";
+import { useSchedules } from "../../features/schedules/hooks/useSchedules";
 import type { AppSettings } from "../../shared/hooks/useAppSettings";
 import { useI18n } from "../../shared/i18n/I18nProvider";
 
 type WorkspacePageProps = {
-  initialTab: "config" | "documents" | "traces";
+  initialTab: "config" | "documents" | "traces" | "schedule";
   identity: WorkspaceIdentity;
   agents: Agent[];
   agent: Agent;
@@ -58,7 +60,8 @@ type WorkspacePageProps = {
 
 export function WorkspacePage(props: WorkspacePageProps) {
   const { t } = useI18n();
-  const [tab, setTab] = useState<"config" | "documents" | "traces">(props.initialTab);
+  const [tab, setTab] = useState<"config" | "documents" | "traces" | "schedule">(props.initialTab);
+  const schedules = useSchedules(props.agent.id);
   const [sidebarOpen, setSidebarOpen] = useState(() => typeof window === "undefined" || (window.innerWidth > 768 && props.sidebarDefaultOpen));
   const [saving, setSaving] = useState(false);
   const attachmentRef = useRef<HTMLInputElement>(null);
@@ -111,6 +114,16 @@ export function WorkspacePage(props: WorkspacePageProps) {
     void props.onDeleteSession(sessionId);
   };
 
+  const [deletingScheduleId, setDeletingScheduleId] = useState<string | null>(null);
+  const deleteSchedule = async (scheduleId: string) => {
+    setDeletingScheduleId(scheduleId);
+    try {
+      await schedules.deleteSchedule(scheduleId);
+    } finally {
+      setDeletingScheduleId(null);
+    }
+  };
+
   return (
     <section className={`workspace ${sidebarOpen ? "sidebar-open" : "sidebar-closed"}`}>
       <WorkspaceSidebar
@@ -156,6 +169,7 @@ export function WorkspacePage(props: WorkspacePageProps) {
           <button id="config-tab" role="tab" aria-selected={tab === "config"} aria-controls="config-panel" className={tab === "config" ? "active" : ""} onClick={() => setTab("config")}>{t("configuration")}</button>
           <button id="documents-tab" role="tab" aria-selected={tab === "documents"} aria-controls="documents-panel" className={tab === "documents" ? "active" : ""} onClick={() => setTab("documents")}>{t("documents")}</button>
           <button id="traces-tab" role="tab" aria-selected={tab === "traces"} aria-controls="traces-panel" className={tab === "traces" ? "active" : ""} onClick={() => setTab("traces")}>{t("traces")}</button>
+          <button id="schedule-tab" role="tab" aria-selected={tab === "schedule"} aria-controls="schedule-panel" className={tab === "schedule" ? "active" : ""} onClick={() => setTab("schedule")}>{t("schedules")}</button>
         </nav>
         {tab === "config" && (
           <div className="inspector-panel" id="config-panel" role="tabpanel" aria-labelledby="config-tab">
@@ -185,6 +199,18 @@ export function WorkspacePage(props: WorkspacePageProps) {
           </div>
         )}
         {tab === "traces" && <div className="inspector-panel" id="traces-panel" role="tabpanel" aria-labelledby="traces-tab"><TracesPanel session={props.currentSession} /></div>}
+        {tab === "schedule" && (
+          <div className="inspector-panel" id="schedule-panel" role="tabpanel" aria-labelledby="schedule-tab">
+            <SchedulePanel
+              schedules={schedules.schedules}
+              loading={schedules.loading}
+              deleting={deletingScheduleId}
+              onCreate={schedules.createSchedule}
+              onToggle={(scheduleId, enabled) => void schedules.updateSchedule(scheduleId, { enabled })}
+              onDelete={(scheduleId) => void deleteSchedule(scheduleId)}
+            />
+          </div>
+        )}
       </aside>
     </section>
   );
