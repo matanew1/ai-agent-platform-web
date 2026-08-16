@@ -145,6 +145,7 @@ export function WorkspacePage(props: WorkspacePageProps) {
         onDraft={chat.setDraft}
         onFiles={chat.setFiles}
         onSubmit={chat.send}
+        onStop={chat.stop}
         onNewSession={props.onNewSession}
         onToggleSidebar={() => setSidebarOpen((open) => !open)}
         showSources={props.showSources}

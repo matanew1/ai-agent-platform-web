@@ -29,10 +29,14 @@ async function mockPlatform(page: Page) {
     if (path === "/models") return respond({ provider: "ollama", default_model: "qwen3:8b", models: [{ id: "qwen3:8b", label: "qwen3:8b" }], temperature: { min: 0, max: 1, step: 0.1, default: 0.3 } });
     if (path === "/documents") return respond([]);
     if (path === `/agents/${agent.id}/sessions`) return respond([]);
-    if (path === `/agents/${agent.id}/chat/stream`) return route.fulfill({
-      status: 200, contentType: "text/plain", body: "Your CV is ready for review.",
-      headers: { "X-Tools-Invoked": "[\"extract_pdf\"]", "X-Chunks-Retrieved": "1", "X-Retrieved-Sources": "[]" },
-    });
+    if (path === `/agents/${agent.id}/chat/stream`) {
+      const message = JSON.parse(request.postData() || "{}").message;
+      if (message === "Stop this response") await new Promise((resolve) => setTimeout(resolve, 500));
+      return route.fulfill({
+        status: 200, contentType: "text/plain", body: "Your CV is ready for review.",
+        headers: { "X-Tools-Invoked": "[\"extract_pdf\"]", "X-Chunks-Retrieved": "1", "X-Retrieved-Sources": "[]" },
+      });
+    }
     return respond({});
   });
 }
@@ -44,7 +48,7 @@ test("settings persist, support Hebrew RTL, voices, and global accessibility con
   await expect(page.getByRole("heading", { name: "Settings" })).toBeVisible();
   await page.getByText("High contrast").click();
   await expect(page.locator("html")).toHaveAttribute("data-contrast", "high");
-  await page.locator(".settings-grid > .settings-card").nth(1).getByRole("button", { name: "עברית" }).click();
+  await page.locator(".settings-card").filter({ has: page.getByRole("heading", { name: "Workspace" }) }).getByRole("button", { name: "עברית" }).click();
   await expect(page.locator("html")).toHaveAttribute("dir", "rtl");
   await expect(page.getByText("קול באנגלית")).toBeVisible();
   await expect(page.getByRole("button", { name: "בדיקת קול" }).first()).toBeVisible();
@@ -69,6 +73,20 @@ test("workspace drawer, avatars, chat streaming, voice controls, and attachments
   await expect(page.getByRole("button", { name: "Start voice input" })).toBeVisible();
   await page.getByRole("button", { name: "More message actions" }).click();
   await expect(page.getByRole("menuitem", { name: "Attach file" })).toBeVisible();
+});
+
+test("stopping a response aborts the browser request", async ({ page }) => {
+  await page.goto("/agents/cv-expert");
+  await page.getByPlaceholder("Message CV Expert").fill("Stop this response");
+  await page.getByRole("button", { name: "Send message" }).click();
+  const stop = page.getByRole("button", { name: "Stop generating" });
+  await expect(stop).toBeVisible({ timeout: 15_000 });
+  const abortedRequest = page.waitForEvent("requestfailed", (request) => (
+    request.url().endsWith(`/agents/${agent.id}/chat/stream`) && request.failure()?.errorText.includes("ABORTED")
+  ));
+  await stop.click();
+  await abortedRequest;
+  await expect(page.getByText("Response stopped.")).toBeVisible();
 });
 
 test("Hebrew message bubbles self-align right-to-left while the interface stays English", async ({ page }) => {

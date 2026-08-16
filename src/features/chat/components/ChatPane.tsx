@@ -1,5 +1,5 @@
 import { FormEvent, RefObject, useEffect, useRef, useState } from "react";
-import { ArrowUp, Bot, Check, Copy, Mic, MicOff, PanelLeftClose, PanelLeftOpen, Paperclip, Plus, Printer, SquarePen, Volume2, VolumeX } from "lucide-react";
+import { ArrowUp, Bot, Check, Copy, Mic, MicOff, PanelLeftClose, PanelLeftOpen, Paperclip, Plus, Printer, Square, SquarePen, Volume2, VolumeX } from "lucide-react";
 
 import { DEFAULT_MODEL } from "../../../shared/config/constants";
 import { Avatar } from "../../../shared/ui/Avatar";
@@ -45,6 +45,7 @@ type ChatPaneProps = {
   onDraft: (value: string) => void;
   onFiles: (files: File[]) => void;
   onSubmit: (event: FormEvent) => void;
+  onStop: () => void;
   onNewSession: () => void;
   onToggleSidebar: () => void;
   showSources: boolean;
@@ -53,7 +54,7 @@ type ChatPaneProps = {
 
 export function ChatPane(props: ChatPaneProps) {
   const { t, locale } = useI18n();
-  const { agent, userId, session, draft, files, streaming, uploadRef, onDraft, onFiles, onSubmit, onNewSession, onToggleSidebar, sidebarOpen, autoReadResponses, sendOnEnter, englishVoice, hebrewVoice, speechInputLocale, showSources, showToolActivity } = props;
+  const { agent, userId, session, draft, files, streaming, uploadRef, onDraft, onFiles, onSubmit, onStop, onNewSession, onToggleSidebar, sidebarOpen, autoReadResponses, sendOnEnter, englishVoice, hebrewVoice, speechInputLocale, showSources, showToolActivity } = props;
   const messagesRef = useRef<HTMLDivElement>(null);
   const [actionsOpen, setActionsOpen] = useState(false);
   const [copiedMessageId, setCopiedMessageId] = useState<string | null>(null);
@@ -215,14 +216,14 @@ export function ChatPane(props: ChatPaneProps) {
           <article className={`message ${message.role}`} key={message.id}>
             {message.role === "assistant" && <span className="message-avatar message-avatar-assistant" aria-label={agent.name}><Bot size={16} strokeWidth={1.8} /></span>}
             <div className="message-body">
-              {message.role === "assistant" && message.meta && showToolActivity && (
+              {message.role === "assistant" && message.meta && showToolActivity && (message.meta.tools.length > 0 || message.meta.chunks > 0) && (
                 <div className="message-activity">
-                  <div className="meta-row" aria-label={t("toolsUsed")}>
-                    <small>{t("toolsUsed")}</small>
-                    {message.meta.tools.length > 0
-                      ? message.meta.tools.map((tool) => <span className="active" key={tool}>{tool}</span>)
-                      : <span>{t("none")}</span>}
-                  </div>
+                  {message.meta.tools.length > 0 && (
+                    <div className="meta-row" aria-label={t("toolsUsed")}>
+                      <small>{t("toolsUsed")}</small>
+                      {message.meta.tools.map((tool) => <span className="active" key={tool}>{tool}</span>)}
+                    </div>
+                  )}
                   {message.meta.chunks > 0 && (
                     <div className="meta-row" aria-label={t("retrievedContext")}>
                       <small>{t("retrieved")}</small>
@@ -358,9 +359,15 @@ export function ChatPane(props: ChatPaneProps) {
               >
                 {listening ? <MicOff size={16} /> : <Mic size={16} />}
               </button>
-              <button className="send" disabled={!session || !draft.trim() || streaming} aria-label={t("sendMessage")}>
-                <ArrowUp size={16} />
-              </button>
+              {streaming ? (
+                <button className="send stop-generation" type="button" aria-label={t("stopGeneration")} title={t("stopGeneration")} onClick={onStop}>
+                  <Square size={14} fill="currentColor" />
+                </button>
+              ) : (
+                <button className="send" disabled={!session || !draft.trim()} aria-label={t("sendMessage")}>
+                  <ArrowUp size={16} />
+                </button>
+              )}
             </div>
           </div>
         </div>

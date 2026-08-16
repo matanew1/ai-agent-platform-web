@@ -21,6 +21,8 @@ export function useStreamingChat({ agent, session, updateSession, onError, onDoc
   const [streaming, setStreaming] = useState(false);
   const activeRequest = useRef<AbortController | null>(null);
 
+  const stop = () => activeRequest.current?.abort();
+
   useEffect(() => {
     activeRequest.current?.abort();
     activeRequest.current = null;
@@ -114,5 +116,5 @@ export function useStreamingChat({ agent, session, updateSession, onError, onDoc
     }
   };
 
-  return { draft, files, streaming, setDraft, setFiles, send };
+  return { draft, files, streaming, setDraft, setFiles, send, stop };
 }
