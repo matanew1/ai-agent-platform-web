@@ -212,7 +212,6 @@ export function SchedulesDashboard({
           agents={agents}
           defaultAgentId={editing.agent.id}
           schedule={editing.schedule}
-          scheduleAgentName={editing.agent.name}
           error={error}
           onClose={() => setEditing(null)}
           onUpdate={(values) => onUpdate(editing.agent.id, editing.schedule.id, values)}

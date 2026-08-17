@@ -848,12 +848,20 @@ html[dir="rtl"] .tool-card-summary {
   overflow: auto;
 }
 
-.settings-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); align-items: start; gap: var(--sp-4); max-width: var(--content-max); }
-.settings-column { display: grid; align-content: start; gap: var(--sp-4); min-width: 0; }
+/* Two fixed arrays of cards (one per JSX column) left a lopsided page
+   whenever one column's cards summed taller than the other's - e.g. the
+   voice-select-heavy "Chat preferences" card made the right column much
+   taller than "Navigation"/"Legal" made the left one, stranding a big gap
+   under the shorter column. CSS multi-column balances total content height
+   across columns natively and keeps doing so as cards/locale copy change,
+   instead of us re-guessing a manual split every time - see
+   SettingsDashboard.tsx, which now renders every card as a flat, direct
+   child here rather than pre-splitting into two column arrays. */
+.settings-grid { column-count: 2; column-gap: var(--sp-4); max-width: var(--content-max); }
 .settings-legal-links { display: grid; gap: 1px; border: 1px solid var(--border-subtle); border-radius: 5px; overflow: hidden; }
 .settings-legal-links a { display: flex; align-items: center; min-height: 34px; padding: 0 10px; background: var(--bg-input); color: var(--text-secondary); font: 11px var(--font-mono); text-decoration: none; }
 .settings-legal-links a:hover { background: var(--accent-subtle); color: var(--text-primary); }
-.settings-card { min-height: 0; padding: var(--sp-5); border: 1px solid var(--border-default); border-radius: var(--radius-lg); background: var(--bg-surface); box-shadow: var(--shadow-sm); }
+.settings-card { min-height: 0; margin-bottom: var(--sp-4); padding: var(--sp-5); border: 1px solid var(--border-default); border-radius: var(--radius-lg); background: var(--bg-surface); box-shadow: var(--shadow-sm); break-inside: avoid; }
 .settings-card > header { display: flex; gap: var(--sp-3); align-items: flex-start; margin-bottom: var(--sp-4); }
 .settings-card > header > span { display: grid; width: 32px; height: 32px; flex: 0 0 auto; place-items: center; border-radius: 10px; background: var(--accent-subtle); color: var(--accent); }
 .settings-card h2 { margin: 0; font-size: 15px; }
@@ -2766,6 +2774,11 @@ html[dir="rtl"] pre {
   box-shadow: var(--shadow-xl);
 }
 
+/* Title + agent picker + description + cron + tools checklist + test
+   preview crowd the default 460px width more than CreateAgentModal's
+   shorter form does - widen just this one rather than every .modal. */
+.modal.schedule-modal { width: 640px; max-width: calc(100vw - 48px); }
+
 .modal h2 {
   margin: var(--sp-1) 0 var(--sp-5);
   font-size: 22px;
@@ -2805,6 +2818,21 @@ html[dir="rtl"] pre {
   min-height: 110px;
   resize: vertical;
   line-height: 1.5;
+}
+
+/* .modal input's block/100%-width rule above has the same specificity as
+   .tool-list input's compact-toggle rule and comes later in the file, so
+   it was winning inside ScheduleModal's tools checklist - the toggle
+   checkboxes rendered as full-width orange bars instead of small
+   switches. Re-declaring at higher specificity (two classes) fixes it
+   regardless of source order, rather than relying on rule placement. */
+.modal .tool-list input {
+  display: block;
+  width: 36px;
+  height: 20px;
+  margin: 0;
+  padding: 0;
+  border: 0;
 }
 
 .modal-runtime-grid {
@@ -3522,7 +3550,7 @@ html[dir="rtl"] .inspector { border-right-color: var(--border-strong); }
   .workspace-onboarding { grid-template-columns: auto minmax(0, 1fr); }
   .workspace-onboarding-steps { grid-column: 1 / -1; }
   .workspace-onboarding > .primary { grid-row: auto; grid-column: 1 / -1; }
-  .settings-grid { grid-template-columns: 1fr; }
+  .settings-grid { column-count: 1; }
   .dashboard-layout { grid-template-columns: 1fr; }
   .dashboard-sidebar { display: none; }
   .workspace,
