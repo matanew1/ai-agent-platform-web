@@ -15,6 +15,7 @@ const settings = {
 async function mockPlatform(page: Page) {
   let savedSettings = { ...settings };
   const savedSchedules: Array<Record<string, unknown>> = [];
+  const deletedSessionIds: string[] = [];
   await page.route("http://localhost:8000/**", async (route) => {
     const request = route.request();
     const url = new URL(request.url());
@@ -30,6 +31,10 @@ async function mockPlatform(page: Page) {
     if (path === "/models") return respond({ provider: "ollama", default_model: "qwen3:8b", models: [{ id: "qwen3:8b", label: "qwen3:8b" }], temperature: { min: 0, max: 1, step: 0.1, default: 0.3 } });
     if (path === "/documents") return respond([]);
     if (path === `/agents/${agent.id}/sessions`) return respond([]);
+    if (path.startsWith(`/agents/${agent.id}/sessions/`) && request.method() === "DELETE") {
+      deletedSessionIds.push(decodeURIComponent(path.split("/").pop() || ""));
+      return route.fulfill({ status: 204 });
+    }
     if (path === `/agents/${agent.id}/schedules`) {
       if (request.method() === "POST") {
         const values = JSON.parse(request.postData() || "{}");
@@ -66,9 +71,12 @@ async function mockPlatform(page: Page) {
     }
     return respond({});
   });
+  return { deletedSessionIds };
 }
 
-test.beforeEach(async ({ page }) => { await mockPlatform(page); });
+const trackers = new WeakMap<Page, { deletedSessionIds: string[] }>();
+
+test.beforeEach(async ({ page }) => { trackers.set(page, await mockPlatform(page)); });
 
 test("settings persist, support Hebrew RTL, voices, and global accessibility controls", async ({ page }) => {
   await page.goto("/settings");
@@ -131,6 +139,7 @@ test("creating a schedule from the Schedules dashboard lists it as a card and su
   await expect(page.getByText("No schedules yet")).toBeVisible();
 
   await page.getByRole("button", { name: "New schedule" }).first().click();
+  await page.getByLabel("Title").fill("Daily digest");
   await page.getByLabel("Message to send").fill("Summarize yesterday's activity.");
   await page.getByRole("button", { name: "Create schedule" }).click();
 
@@ -143,9 +152,27 @@ test("creating a schedule from the Schedules dashboard lists it as a card and su
   await expect(page.getByText("No schedules yet")).toBeVisible();
 });
 
+test("testing a schedule message previews a real reply without saving a session", async ({ page }) => {
+  await page.goto("/schedules");
+  await page.getByRole("button", { name: "New schedule" }).first().click();
+  await page.getByLabel("Title").fill("Daily digest");
+  await page.getByLabel("Message to send").fill("Please review my CV");
+  await expect(page.getByText("extract_pdf")).toBeVisible();
+
+  await page.getByRole("button", { name: "Test message" }).click();
+
+  await expect(page.getByText("Your CV is ready for review.")).toBeVisible();
+  // The test run persists a real session server-side like an interactive
+  // turn does - confirm it actually gets cleaned up rather than lingering
+  // in the agent's session list.
+  await expect.poll(() => trackers.get(page)!.deletedSessionIds.length).toBe(1);
+  expect(trackers.get(page)!.deletedSessionIds[0]).toMatch(/^test-/);
+});
+
 test("editing a schedule updates its message", async ({ page }) => {
   await page.goto("/schedules");
   await page.getByRole("button", { name: "New schedule" }).first().click();
+  await page.getByLabel("Title").fill("Daily digest");
   await page.getByLabel("Message to send").fill("Summarize yesterday's activity.");
   await page.getByRole("button", { name: "Create schedule" }).click();
   await expect(page.locator(".schedule-card")).toHaveCount(1);
@@ -161,6 +188,7 @@ test("editing a schedule updates its message", async ({ page }) => {
 test("clicking a schedule card opens its dedicated history page, not the chat workspace", async ({ page }) => {
   await page.goto("/schedules");
   await page.getByRole("button", { name: "New schedule" }).first().click();
+  await page.getByLabel("Title").fill("Daily digest");
   await page.getByLabel("Message to send").fill("Summarize yesterday's activity.");
   await page.getByRole("button", { name: "Create schedule" }).click();
   await expect(page.locator(".schedule-card")).toHaveCount(1);
@@ -169,7 +197,7 @@ test("clicking a schedule card opens its dedicated history page, not the chat wo
 
   await expect(page).toHaveURL(/\/schedules\/sched-1$/);
   await expect(page.locator(".dashboard-layout")).toBeVisible();
-  await expect(page.getByRole("heading", { name: "CV Expert" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Daily digest" })).toBeVisible();
   await expect(page.getByText("No runs yet")).toBeVisible();
   await expect(page.getByPlaceholder("Message CV Expert")).toHaveCount(0);
 

@@ -6,6 +6,11 @@ type StreamChatInput = {
   sessionId: string;
   message: string;
   files: ChatAttachment[];
+  /** Narrows the agent's own allowed_tools for this one turn; omitted
+   * means "use whatever the agent allows" (the pre-existing behavior).
+   * Used by the schedule editor's "Test message" preview to honor a
+   * schedule's own tools override - see chat.schemas.ChatRequest.tools. */
+  tools?: string[];
   signal?: AbortSignal;
   onChunk: (chunk: string) => void;
 };
@@ -13,7 +18,12 @@ type StreamChatInput = {
 export async function streamChat(input: StreamChatInput): Promise<ChatMetadata> {
   const response = await apiStream(
     `/agents/${input.agentId}/chat/stream`,
-    { session_id: input.sessionId, message: input.message, files: input.files },
+    {
+      session_id: input.sessionId,
+      message: input.message,
+      files: input.files,
+      ...(input.tools ? { tools: input.tools } : {}),
+    },
     input.signal,
   );
   const reader = response.body!.getReader();
