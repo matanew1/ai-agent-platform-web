@@ -85,8 +85,10 @@ export function useAllSchedules(userId: string, agentIds: string[]) {
         ...current,
         [agentId]: (current[agentId] || []).filter((schedule) => schedule.id !== scheduleId),
       }));
+      return true;
     } catch (reason) {
       setError(getErrorMessage(reason, "Unable to delete schedule."));
+      return false;
     } finally {
       setDeleting(null);
     }

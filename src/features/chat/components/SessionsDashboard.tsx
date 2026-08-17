@@ -5,6 +5,7 @@ import { type DashboardDestination, type WorkspaceIdentity } from "../../../comp
 import { ManagementPage } from "../../../components/layout/ManagementPage";
 import { Avatar } from "../../../shared/ui/Avatar";
 import type { Agent } from "../../agents/types";
+import { isScheduledSessionId } from "../../schedules/types";
 import type { Session } from "../types";
 import { useI18n } from "../../../shared/i18n/I18nProvider";
 
@@ -46,7 +47,13 @@ export function SessionsDashboard({
   }, [agents, newSessionAgentId]);
 
   const entries = useMemo(() => agents.flatMap((agent, agentIndex) => (
-    (sessionsByAgent[agent.id] || []).map((session) => ({ agent, agentIndex, session }))
+    // Runs a schedule produced are reached through the Schedules
+    // dashboard's "View log" link, not this one - keeps manually-started
+    // conversations separate from unattended runs (see WorkspaceSidebar's
+    // identical filter for the per-agent session list).
+    (sessionsByAgent[agent.id] || [])
+      .filter((session) => !isScheduledSessionId(session.id))
+      .map((session) => ({ agent, agentIndex, session }))
   )).sort((left, right) => right.session.updatedAt - left.session.updatedAt), [agents, sessionsByAgent]);
 
   const visibleEntries = useMemo(() => {

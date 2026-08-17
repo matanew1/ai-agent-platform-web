@@ -11,8 +11,10 @@ import { DocumentsDashboard } from "../features/documents/components/DocumentsDa
 import { SettingsDashboard } from "../features/settings/components/SettingsDashboard";
 import { useDocuments } from "../features/documents/hooks/useDocuments";
 import { useModelCatalog } from "../features/models/hooks/useModelCatalog";
+import { ScheduleHistoryPage } from "../features/schedules/components/ScheduleHistoryPage";
 import { SchedulesDashboard } from "../features/schedules/components/SchedulesDashboard";
 import { useAllSchedules } from "../features/schedules/hooks/useAllSchedules";
+import { lastRunClientSessionId, type Schedule } from "../features/schedules/types";
 import type { AuthenticatedUser } from "../features/auth/types";
 import { WorkspacePage } from "../pages/workspace/WorkspacePage";
 import type { DashboardDestination } from "../components/layout/DashboardSidebar";
@@ -22,10 +24,10 @@ import { Notice } from "../shared/ui/Notice";
 import { useAppSettings } from "../shared/hooks/useAppSettings";
 import { I18nProvider } from "../shared/i18n/I18nProvider";
 
-type View = "dashboard" | "workspace" | "sessions" | "schedules" | "documents" | "tools" | "settings";
+type View = "dashboard" | "workspace" | "sessions" | "schedules" | "schedule-detail" | "documents" | "tools" | "settings";
 type InspectorTab = "config" | "documents" | "traces";
 
-type Route = { view: View; agentSlug: string | null };
+type Route = { view: View; agentSlug: string | null; scheduleId: string | null };
 
 type AppProps = {
   currentUser: AuthenticatedUser;
@@ -60,6 +62,22 @@ export default function App({ currentUser, onSignOut }: AppProps) {
     documents: documents.documents.length,
   }), [agentsState.agents.length, documents.documents.length, sessions.sessionCount]);
 
+  const scheduleDetail = useMemo(() => {
+    if (!route.scheduleId) return null;
+    for (const agent of agentsState.agents) {
+      const found = (schedules.schedulesByAgent[agent.id] || []).find((candidate) => candidate.id === route.scheduleId);
+      if (found) return { agent, schedule: found };
+    }
+    return null;
+  }, [route.scheduleId, agentsState.agents, schedules.schedulesByAgent]);
+
+  const scheduleDetailSession = useMemo(() => {
+    if (!scheduleDetail) return null;
+    const sessionId = lastRunClientSessionId(scheduleDetail.schedule, identity.id);
+    if (!sessionId) return null;
+    return (sessions.sessionsByAgent[scheduleDetail.agent.id] || []).find((session) => session.id === sessionId) || null;
+  }, [scheduleDetail, sessions.sessionsByAgent, identity.id]);
+
   useEffect(() => {
     if (window.location.pathname === "/") window.history.replaceState({}, "", "/agents");
     const onPopState = () => setRoute(readRoute());
@@ -78,7 +96,7 @@ export default function App({ currentUser, onSignOut }: AppProps) {
     setWorkspaceTab(inspectorTab);
     const path = `/agents/${agentSlug(agent)}`;
     if (window.location.pathname !== path) window.history.pushState({}, "", path);
-    setRoute({ view: "workspace", agentSlug: agentSlug(agent) });
+    setRoute({ view: "workspace", agentSlug: agentSlug(agent), scheduleId: null });
   };
 
   const openDashboard = () => {
@@ -88,12 +106,18 @@ export default function App({ currentUser, onSignOut }: AppProps) {
   const navigateDashboard = (destination: DashboardDestination) => {
     const path = destination === "agents" ? "/agents" : `/${destination}`;
     if (window.location.pathname !== path) window.history.pushState({}, "", path);
-    setRoute({ view: destination === "agents" ? "dashboard" : destination, agentSlug: null });
+    setRoute({ view: destination === "agents" ? "dashboard" : destination, agentSlug: null, scheduleId: null });
   };
 
   const openSession = (agent: Agent, sessionId: string) => {
     sessions.selectAgentSession(agent.id, sessionId);
     openAgent(agent);
+  };
+
+  const openScheduleHistory = (schedule: Schedule) => {
+    const path = `/schedules/${schedule.id}`;
+    if (window.location.pathname !== path) window.history.pushState({}, "", path);
+    setRoute({ view: "schedule-detail", agentSlug: null, scheduleId: schedule.id });
   };
 
   const newSession = (agent: Agent) => {
@@ -197,6 +221,28 @@ export default function App({ currentUser, onSignOut }: AppProps) {
           onUpdate={schedules.updateSchedule}
           onToggle={(agentId, scheduleId, enabled) => schedules.updateSchedule(agentId, scheduleId, { enabled })}
           onDelete={(agentId, scheduleId) => void schedules.deleteSchedule(agentId, scheduleId)}
+          onSelectSchedule={openScheduleHistory}
+        />
+      ) : route.view === "schedule-detail" ? (
+        <ScheduleHistoryPage
+          identity={identity}
+          connected={agentsState.connected}
+          agent={scheduleDetail?.agent || null}
+          schedule={scheduleDetail?.schedule || null}
+          session={scheduleDetailSession}
+          loading={schedules.loading || sessions.catalogLoading}
+          deleting={schedules.deleting}
+          error={schedules.error}
+          onSignOut={onSignOut}
+          onNavigate={navigateDashboard}
+          onBack={() => navigateDashboard("schedules")}
+          onToggle={() => scheduleDetail && void schedules.updateSchedule(scheduleDetail.agent.id, scheduleDetail.schedule.id, { enabled: !scheduleDetail.schedule.enabled })}
+          onDelete={() => {
+            if (!scheduleDetail) return;
+            void schedules.deleteSchedule(scheduleDetail.agent.id, scheduleDetail.schedule.id).then((deleted) => {
+              if (deleted) navigateDashboard("schedules");
+            });
+          }}
         />
       ) : route.view === "documents" ? (
         <DocumentsDashboard
@@ -270,11 +316,13 @@ function agentSlug(agent: Agent) {
 }
 
 function readRoute(): Route {
-  const match = window.location.pathname.match(/^\/agents\/([^/]+)\/?$/);
-  if (match) return { view: "workspace", agentSlug: decodeURIComponent(match[1]) };
+  const agentMatch = window.location.pathname.match(/^\/agents\/([^/]+)\/?$/);
+  if (agentMatch) return { view: "workspace", agentSlug: decodeURIComponent(agentMatch[1]), scheduleId: null };
+  const scheduleMatch = window.location.pathname.match(/^\/schedules\/([^/]+)\/?$/);
+  if (scheduleMatch) return { view: "schedule-detail", agentSlug: null, scheduleId: decodeURIComponent(scheduleMatch[1]) };
   const view = window.location.pathname.replace(/^\/+|\/+$/g, "");
   if (view === "sessions" || view === "schedules" || view === "documents" || view === "tools" || view === "settings") {
-    return { view, agentSlug: null };
+    return { view, agentSlug: null, scheduleId: null };
   }
-  return { view: "dashboard", agentSlug: null };
+  return { view: "dashboard", agentSlug: null, scheduleId: null };
 }

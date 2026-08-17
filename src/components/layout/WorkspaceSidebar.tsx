@@ -1,4 +1,4 @@
-import { Clock, Plus, Trash2 } from "lucide-react";
+import { Plus, Trash2 } from "lucide-react";
 import type { Agent } from "../../features/agents/types";
 import type { Session } from "../../features/chat/types";
 import { isScheduledSessionId } from "../../features/schedules/types";
@@ -53,13 +53,14 @@ export function WorkspaceSidebar(props: WorkspaceSidebarProps) {
           <p className="eyebrow">{t("sessions")} · {props.agents.find((agent) => agent.id === props.selectedAgentId)?.name}</p>
         </div>
         <nav className="session-list">
-          {props.sessions.map((session) => (
+          {/* Sessions produced by a fired schedule are reached through the
+             Schedules dashboard's "View log" link, not this list - keeps
+             manually-started conversations and unattended runs visually
+             separate rather than mixed together with just a badge. */}
+          {props.sessions.filter((session) => !isScheduledSessionId(session.id)).map((session) => (
             <div className={`session-item ${session.id === props.selectedSessionId ? "active" : ""}`} key={session.id}>
               <button className="session-select" onClick={() => props.onSelectSession(session.id)}>
-                <strong>
-                  {session.title}
-                  {isScheduledSessionId(session.id) && <Clock className="scheduled-session-badge" size={11} aria-label={t("scheduledRun")} />}
-                </strong>
+                <strong>{session.title}</strong>
                 <span>{session.messages.length} messages · {formatSessionDate(session.updatedAt)}</span>
               </button>
               <button

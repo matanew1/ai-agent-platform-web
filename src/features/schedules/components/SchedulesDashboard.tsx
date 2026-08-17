@@ -6,6 +6,7 @@ import { Avatar } from "../../../shared/ui/Avatar";
 import { useI18n } from "../../../shared/i18n/I18nProvider";
 import type { Agent } from "../../agents/types";
 import { describeCron } from "../cronPresets";
+import { formatRelative } from "../formatRelative";
 import type { Schedule, ScheduleChanges } from "../types";
 import { ScheduleModal } from "./ScheduleModal";
 
@@ -23,6 +24,9 @@ type SchedulesDashboardProps = {
   onUpdate: (agentId: string, scheduleId: string, changes: ScheduleChanges) => Promise<unknown>;
   onToggle: (agentId: string, scheduleId: string, enabled: boolean) => Promise<unknown>;
   onDelete: (agentId: string, scheduleId: string) => void;
+  /** Opens the dedicated `/schedules/:id` history page for this schedule -
+   * a read-only run log, not the chat workspace (see ScheduleHistoryPage). */
+  onSelectSchedule: (schedule: Schedule) => void;
 };
 
 export function SchedulesDashboard({
@@ -39,6 +43,7 @@ export function SchedulesDashboard({
   onUpdate,
   onToggle,
   onDelete,
+  onSelectSchedule,
 }: SchedulesDashboardProps) {
   const { t, locale } = useI18n();
   const [showCreate, setShowCreate] = useState(false);
@@ -116,30 +121,45 @@ export function SchedulesDashboard({
             </div>
           ))}
 
-          {entries.map(({ agent, agentIndex, schedule }) => (
-            <article className={`schedule-card ${schedule.enabled ? "" : "schedule-card-paused"}`} key={`${agent.id}:${schedule.id}`}>
-              <header className="schedule-card-head">
-                <Avatar name={agent.name} tone={agentIndex} />
-                <div>
-                  <div className="agent-card-title">
-                    <h2>{agent.name}</h2>
-                    {schedule.enabled && <i />}
+          {entries.map(({ agent, agentIndex, schedule }) => {
+            const cardBody = (
+              <>
+                <header className="schedule-card-head">
+                  <Avatar name={agent.name} tone={agentIndex} />
+                  <div>
+                    <div className="agent-card-title">
+                      <h2>{agent.name}</h2>
+                      {schedule.enabled && <i />}
+                    </div>
+                    <small>{describeCron(schedule.cron_expression, t)}</small>
                   </div>
-                  <small>{describeCron(schedule.cron_expression, t)}</small>
-                </div>
-                <span className={`schedule-status-pill ${schedule.enabled ? "on" : ""}`}>
-                  {schedule.enabled ? t("enabled") : t("disabledLabel")}
-                </span>
-              </header>
-              <p>{schedule.trigger_message}</p>
-              <footer>
-                <span>
-                  {schedule.enabled
-                    ? t("nextRun", { time: formatRelative(schedule.next_run_at, locale) })
-                    : t("scheduleDisabled")}
-                </span>
-                {schedule.last_run_at && <span>{t("lastRun", { time: formatRelative(schedule.last_run_at, locale) })}</span>}
-              </footer>
+                  <span className={`schedule-status-pill ${schedule.enabled ? "on" : ""}`}>
+                    {schedule.enabled ? t("enabled") : t("disabledLabel")}
+                  </span>
+                </header>
+                <p>{schedule.trigger_message}</p>
+                <footer>
+                  <span>
+                    {schedule.enabled
+                      ? t("nextRun", { time: formatRelative(schedule.next_run_at, locale) })
+                      : t("scheduleDisabled")}
+                  </span>
+                  <span>
+                    {schedule.last_run_at ? t("lastRun", { time: formatRelative(schedule.last_run_at, locale) }) : t("noRunsYet")}
+                  </span>
+                </footer>
+              </>
+            );
+            return (
+            <article className={`schedule-card ${schedule.enabled ? "" : "schedule-card-paused"}`} key={`${agent.id}:${schedule.id}`}>
+              <button
+                type="button"
+                className="schedule-card-open"
+                title={t("viewRunLog")}
+                onClick={() => onSelectSchedule(schedule)}
+              >
+                {cardBody}
+              </button>
               <div className="schedule-card-actions">
                 <button
                   type="button"
@@ -172,7 +192,8 @@ export function SchedulesDashboard({
                 </span>
               </div>
             </article>
-          ))}
+            );
+          })}
         </div>
       </div>
 
@@ -201,14 +222,3 @@ export function SchedulesDashboard({
   );
 }
 
-function formatRelative(iso: string, locale: string): string {
-  const target = new Date(iso).getTime();
-  if (Number.isNaN(target)) return iso;
-  const diffMinutes = Math.round((target - Date.now()) / 60000);
-  const absMinutes = Math.abs(diffMinutes);
-  const formatter = new Intl.RelativeTimeFormat(locale, { numeric: "auto" });
-  if (absMinutes < 60) return formatter.format(diffMinutes, "minute");
-  const diffHours = Math.round(diffMinutes / 60);
-  if (Math.abs(diffHours) < 24) return formatter.format(diffHours, "hour");
-  return formatter.format(Math.round(diffHours / 24), "day");
-}
