@@ -23,3 +23,17 @@ export type ScheduleChanges = Partial<Pick<Schedule, "cron_expression" | "trigge
 export function isScheduledSessionId(sessionId: string) {
   return sessionId.startsWith("scheduled-");
 }
+
+/** `Schedule.last_run_session_id` comes back from `/agents/{id}/schedules`
+ * as the *full* session id ScheduleRunner constructed and stored
+ * server-side (`owner_id:agent_id:scheduled-...`) - unlike
+ * `GET /agents/{id}/sessions`, this route never strips the prefix, since
+ * it isn't a session route at all. Strip it the same way here so the
+ * result can be used as a plain `Session.id` (see useChatSessions). */
+export function lastRunClientSessionId(schedule: Schedule, ownerId: string): string | null {
+  if (!schedule.last_run_session_id) return null;
+  const prefix = `${ownerId}:${schedule.agent_id}:`;
+  return schedule.last_run_session_id.startsWith(prefix)
+    ? schedule.last_run_session_id.slice(prefix.length)
+    : schedule.last_run_session_id;
+}

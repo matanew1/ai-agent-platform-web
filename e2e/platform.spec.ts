@@ -158,8 +158,27 @@ test("editing a schedule updates its message", async ({ page }) => {
   await expect(page.locator(".schedule-card")).toContainText("Summarize this week instead.");
 });
 
+test("clicking a schedule card opens its dedicated history page, not the chat workspace", async ({ page }) => {
+  await page.goto("/schedules");
+  await page.getByRole("button", { name: "New schedule" }).first().click();
+  await page.getByLabel("Message to send").fill("Summarize yesterday's activity.");
+  await page.getByRole("button", { name: "Create schedule" }).click();
+  await expect(page.locator(".schedule-card")).toHaveCount(1);
+
+  await page.locator(".schedule-card-open").click();
+
+  await expect(page).toHaveURL(/\/schedules\/sched-1$/);
+  await expect(page.locator(".dashboard-layout")).toBeVisible();
+  await expect(page.getByRole("heading", { name: "CV Expert" })).toBeVisible();
+  await expect(page.getByText("No runs yet")).toBeVisible();
+  await expect(page.getByPlaceholder("Message CV Expert")).toHaveCount(0);
+
+  await page.locator(".schedule-history-back").click();
+  await expect(page).toHaveURL(/\/schedules$/);
+});
+
 test("main screens and configuration controls stay within their containers", async ({ page }) => {
-  for (const route of ["/agents", "/sessions", "/schedules", "/documents", "/tools", "/settings", "/agents/cv-expert"]) {
+  for (const route of ["/agents", "/sessions", "/schedules", "/schedules/sched-1", "/documents", "/tools", "/settings", "/agents/cv-expert"]) {
     await page.goto(route);
     await expect(page.locator("main.app-shell")).toBeVisible();
     const overflowing = await page.evaluate(() => {

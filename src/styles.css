@@ -1351,12 +1351,6 @@ html[dir="rtl"] .agent-list button.active::before { border-radius: 2px 0 0 2px; 
   white-space: nowrap;
 }
 
-.scheduled-session-badge {
-  display: inline-block;
-  margin-inline-start: 4px;
-  color: var(--accent);
-  vertical-align: -1px;
-}
 
 .session-list span {
   display: block;
@@ -2470,6 +2464,18 @@ html[dir="rtl"] pre {
 .schedule-card:hover { border-color: rgba(75, 125, 255, 0.35); background: var(--bg-surface-hover); }
 .schedule-card-paused { opacity: 0.72; }
 
+.schedule-card-open {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  text-align: start;
+  cursor: pointer;
+}
+
 .schedule-card-head {
   display: flex;
   min-width: 0;
@@ -2594,6 +2600,66 @@ html[dir="rtl"] pre {
   color: var(--text-muted);
   font-size: 11.5px;
   font-style: italic;
+}
+
+/* ============================================================
+   SCHEDULE HISTORY PAGE
+   ============================================================ */
+.schedule-history-back {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: var(--sp-3);
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--text-muted);
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.schedule-history-back:hover { color: var(--text-primary); }
+
+.schedule-history-title {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+}
+
+.schedule-history-title h1 { margin: 0; }
+.schedule-history-title p { margin: 2px 0 0; color: var(--text-muted); font-size: 13px; }
+
+.schedule-history-content {
+  max-width: var(--content-max);
+  padding: 0 var(--sp-6) var(--sp-8);
+}
+
+.schedule-history-message {
+  margin-bottom: var(--sp-5);
+  padding: var(--sp-4);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  background: var(--bg-surface);
+}
+
+.schedule-history-message p:last-child {
+  margin: var(--sp-2) 0 0;
+  color: var(--text-secondary);
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.schedule-history-runs-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: var(--sp-3);
+}
+
+.schedule-run-log {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-4);
 }
 
 /* ============================================================
