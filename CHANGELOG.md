@@ -2,6 +2,18 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [0.7.0](https://github.com/matanew1/ai-agent-platform-web/compare/v0.6.0...v0.7.0) (2026-08-17)
+
+
+### Features
+
+* **schedules:** move a schedule to a different owned agent ([480523a](https://github.com/matanew1/ai-agent-platform-web/commit/480523af308329a280441dd12d31fa81b6de5b6f))
+
+
+### Bug Fixes
+
+* **settings:** balance Settings page columns automatically ([d4c73f0](https://github.com/matanew1/ai-agent-platform-web/commit/d4c73f093a4db068bedd9afca8624cb21b0f8279))
+
 ## [0.6.0](https://github.com/matanew1/ai-agent-platform-web/compare/v0.5.0...v0.6.0) (2026-08-17)
 
 
