@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [0.6.0](https://github.com/matanew1/ai-agent-platform-web/compare/v0.5.0...v0.6.0) (2026-08-17)
+
+
+### Features
+
+* **schedules:** title, description, per-schedule tool scope, test-run preview ([b7e4618](https://github.com/matanew1/ai-agent-platform-web/commit/b7e4618cc4e4b31372a540431006f6a6dad43b09))
+
 ## [0.5.0](https://github.com/matanew1/ai-agent-platform-web/compare/v0.4.0...v0.5.0) (2026-08-17)
 
 
