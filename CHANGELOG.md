@@ -2,6 +2,18 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [0.5.0](https://github.com/matanew1/ai-agent-platform-web/compare/v0.4.0...v0.5.0) (2026-08-17)
+
+
+### Features
+
+* **schedules:** dedicated run-history page, separate from chat sessions ([4d3a075](https://github.com/matanew1/ai-agent-platform-web/commit/4d3a07522580ca1c9067b8cf76f386d112a54d86))
+
+
+### Bug Fixes
+
+* **schedules:** address history-page review findings ([ddfcf98](https://github.com/matanew1/ai-agent-platform-web/commit/ddfcf9881b58248b8c43aaf39fa47f87d4e3621b))
+
 ## [0.4.0](https://github.com/matanew1/ai-agent-platform-web/compare/v0.3.0...v0.4.0) (2026-08-16)
 
 
