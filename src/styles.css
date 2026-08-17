@@ -2602,6 +2602,42 @@ html[dir="rtl"] pre {
   font-style: italic;
 }
 
+.schedule-tools-field { margin: var(--sp-2) 0 var(--sp-4); }
+.schedule-tools-field .tool-list { max-height: 160px; overflow-y: auto; }
+
+.schedule-test-block {
+  margin: 0 0 var(--sp-4);
+  padding-top: var(--sp-3);
+  border-top: 1px solid var(--border-subtle);
+}
+
+.schedule-test-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 12px;
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--text-secondary);
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.schedule-test-button:hover:not(:disabled) { border-color: var(--accent); color: var(--accent); }
+
+.schedule-test-preview {
+  margin-top: var(--sp-3);
+  padding: var(--sp-3);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  background: var(--bg-input);
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.schedule-test-preview p { margin: 0; color: var(--text-secondary); white-space: pre-wrap; }
+
 /* ============================================================
    SCHEDULE HISTORY PAGE
    ============================================================ */

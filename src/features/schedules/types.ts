@@ -1,8 +1,14 @@
 export type Schedule = {
   id: string;
   agent_id: string;
+  title: string;
+  description?: string | null;
   cron_expression: string;
   trigger_message: string;
+  /** A subset of the agent's own allowed_tools narrowing this schedule's
+   * fire-time tool access; null means "use whatever the agent allows" -
+   * see automation.runner.ScheduleRunner on the backend. */
+  tools?: string[] | null;
   enabled: boolean;
   next_run_at: string;
   last_run_at?: string | null;
@@ -11,8 +17,14 @@ export type Schedule = {
   updated_at: string;
 };
 
-export type CreateScheduleValues = Pick<Schedule, "cron_expression" | "trigger_message">;
-export type ScheduleChanges = Partial<Pick<Schedule, "cron_expression" | "trigger_message" | "enabled">>;
+export type CreateScheduleValues = Pick<
+  Schedule,
+  "title" | "cron_expression" | "trigger_message"
+> &
+  Partial<Pick<Schedule, "description" | "tools">>;
+export type ScheduleChanges = Partial<
+  Pick<Schedule, "title" | "description" | "cron_expression" | "trigger_message" | "tools" | "enabled">
+>;
 
 /** A session created by a fired schedule gets a client-facing id starting
  * with this marker (see automation.runner.ScheduleRunner on the backend) -

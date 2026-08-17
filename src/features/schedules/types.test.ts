@@ -4,9 +4,9 @@ import { isScheduledSessionId, lastRunClientSessionId, type Schedule } from "./t
 
 function schedule(overrides: Partial<Schedule> = {}): Schedule {
   return {
-    id: "sched-1", agent_id: "agent-1", cron_expression: "0 8 * * *", trigger_message: "hi",
-    enabled: true, next_run_at: "2026-01-02T08:00:00Z", created_at: "2026-01-01T00:00:00Z",
-    updated_at: "2026-01-01T00:00:00Z", ...overrides,
+    id: "sched-1", agent_id: "agent-1", title: "Daily digest", cron_expression: "0 8 * * *",
+    trigger_message: "hi", enabled: true, next_run_at: "2026-01-02T08:00:00Z",
+    created_at: "2026-01-01T00:00:00Z", updated_at: "2026-01-01T00:00:00Z", ...overrides,
   };
 }
 

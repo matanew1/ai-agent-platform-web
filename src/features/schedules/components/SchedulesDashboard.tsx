@@ -7,7 +7,7 @@ import { useI18n } from "../../../shared/i18n/I18nProvider";
 import type { Agent } from "../../agents/types";
 import { describeCron } from "../cronPresets";
 import { formatRelative } from "../formatRelative";
-import type { Schedule, ScheduleChanges } from "../types";
+import type { CreateScheduleValues, Schedule, ScheduleChanges } from "../types";
 import { ScheduleModal } from "./ScheduleModal";
 
 type SchedulesDashboardProps = {
@@ -20,7 +20,7 @@ type SchedulesDashboardProps = {
   error: string | null;
   onSignOut?: () => void;
   onNavigate: (destination: DashboardDestination) => void;
-  onCreate: (agentId: string, values: { cron_expression: string; trigger_message: string }) => Promise<unknown>;
+  onCreate: (agentId: string, values: CreateScheduleValues) => Promise<unknown>;
   onUpdate: (agentId: string, scheduleId: string, changes: ScheduleChanges) => Promise<unknown>;
   onToggle: (agentId: string, scheduleId: string, enabled: boolean) => Promise<unknown>;
   onDelete: (agentId: string, scheduleId: string) => void;
@@ -128,16 +128,16 @@ export function SchedulesDashboard({
                   <Avatar name={agent.name} tone={agentIndex} />
                   <div>
                     <div className="agent-card-title">
-                      <h2>{agent.name}</h2>
+                      <h2>{schedule.title}</h2>
                       {schedule.enabled && <i />}
                     </div>
-                    <small>{describeCron(schedule.cron_expression, t)}</small>
+                    <small>{agent.name} · {describeCron(schedule.cron_expression, t)}</small>
                   </div>
                   <span className={`schedule-status-pill ${schedule.enabled ? "on" : ""}`}>
                     {schedule.enabled ? t("enabled") : t("disabledLabel")}
                   </span>
                 </header>
-                <p>{schedule.trigger_message}</p>
+                <p>{schedule.description || schedule.trigger_message}</p>
                 <footer>
                   <span>
                     {schedule.enabled

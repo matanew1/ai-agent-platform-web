@@ -81,8 +81,8 @@ export function ScheduleHistoryPage({
               <div className="schedule-history-title">
                 <Avatar name={agent.name} />
                 <div>
-                  <h1>{agent.name}</h1>
-                  <p>{describeCron(schedule.cron_expression, t)}</p>
+                  <h1>{schedule.title}</h1>
+                  <p>{agent.name} · {describeCron(schedule.cron_expression, t)}</p>
                 </div>
                 <span className={`schedule-status-pill ${schedule.enabled ? "on" : ""}`}>
                   {schedule.enabled ? t("enabled") : t("disabledLabel")}
@@ -115,6 +115,12 @@ export function ScheduleHistoryPage({
             </div>
           ) : (
             <>
+              {schedule.description && (
+                <div className="schedule-history-message">
+                  <p className="inspector-kicker">{t("scheduleDescription")}</p>
+                  <p>{schedule.description}</p>
+                </div>
+              )}
               <div className="schedule-history-message">
                 <p className="inspector-kicker">{t("triggerMessage")}</p>
                 <p>{schedule.trigger_message}</p>
