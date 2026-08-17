@@ -18,6 +18,7 @@ type ScheduleHistoryPageProps = {
   session: Session | null;
   loading: boolean;
   deleting: string | null;
+  error: string | null;
   onSignOut?: () => void;
   onNavigate: (destination: DashboardDestination) => void;
   onBack: () => void;
@@ -45,13 +46,14 @@ export function ScheduleHistoryPage({
   session,
   loading,
   deleting,
+  error,
   onSignOut,
   onNavigate,
   onBack,
   onToggle,
   onDelete,
 }: ScheduleHistoryPageProps) {
-  const { t } = useI18n();
+  const { t, locale } = useI18n();
 
   const requestDelete = () => {
     if (!agent || !schedule) return;
@@ -103,6 +105,7 @@ export function ScheduleHistoryPage({
         </header>
 
         <div className="schedule-history-content">
+          {error && <p className="panel-footnote warning">{error}</p>}
           {loading ? (
             <p className="panel-footnote">{t("loadingSchedules")}</p>
           ) : !schedule || !agent ? (
@@ -118,7 +121,7 @@ export function ScheduleHistoryPage({
               </div>
               <p className="inspector-kicker schedule-history-runs-heading">
                 {t("viewRunLog")}
-                {schedule.last_run_at && <span>{t("lastRun", { time: formatRelative(schedule.last_run_at) })}</span>}
+                {schedule.last_run_at && <span>{t("lastRun", { time: formatRelative(schedule.last_run_at, locale) })}</span>}
               </p>
               {!session ? (
                 <div className="management-empty">

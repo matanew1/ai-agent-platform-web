@@ -232,13 +232,16 @@ export default function App({ currentUser, onSignOut }: AppProps) {
           session={scheduleDetailSession}
           loading={schedules.loading || sessions.catalogLoading}
           deleting={schedules.deleting}
+          error={schedules.error}
           onSignOut={onSignOut}
           onNavigate={navigateDashboard}
           onBack={() => navigateDashboard("schedules")}
           onToggle={() => scheduleDetail && void schedules.updateSchedule(scheduleDetail.agent.id, scheduleDetail.schedule.id, { enabled: !scheduleDetail.schedule.enabled })}
           onDelete={() => {
             if (!scheduleDetail) return;
-            void schedules.deleteSchedule(scheduleDetail.agent.id, scheduleDetail.schedule.id).then(() => navigateDashboard("schedules"));
+            void schedules.deleteSchedule(scheduleDetail.agent.id, scheduleDetail.schedule.id).then((deleted) => {
+              if (deleted) navigateDashboard("schedules");
+            });
           }}
         />
       ) : route.view === "documents" ? (

@@ -15,11 +15,12 @@ export type CreateScheduleValues = Pick<Schedule, "cron_expression" | "trigger_m
 export type ScheduleChanges = Partial<Pick<Schedule, "cron_expression" | "trigger_message" | "enabled">>;
 
 /** A session created by a fired schedule gets a client-facing id starting
- * with this marker (see automation.runner.ScheduleRunner on the backend),
- * so the chat UI can badge it without a dedicated session field - the
- * backend already strips the `owner_id:agent_id:` prefix before a session
- * id reaches the client (see agent.controller), so this only needs to
- * check the remaining segment. */
+ * with this marker (see automation.runner.ScheduleRunner on the backend) -
+ * used to filter scheduled runs out of the regular chat session lists
+ * (WorkspaceSidebar, SessionsDashboard), since they're reached through
+ * ScheduleHistoryPage instead. The backend already strips the
+ * `owner_id:agent_id:` prefix before a session id reaches the client (see
+ * agent.controller), so this only needs to check the remaining segment. */
 export function isScheduledSessionId(sessionId: string) {
   return sessionId.startsWith("scheduled-");
 }
