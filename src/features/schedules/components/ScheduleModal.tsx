@@ -10,11 +10,10 @@ import type { CreateScheduleValues, Schedule, ScheduleChanges } from "../types";
 type ScheduleModalProps = {
   agents: Agent[];
   defaultAgentId: string;
-  /** Present for edit mode; absent for create mode. The agent a schedule
-   * belongs to can't change after creation (see automation.controller's
-   * per-agent scoping), so editing only ever touches cron/message/tools. */
+  /** Present for edit mode; absent for create mode. Editing can still
+   * move the schedule to a different owned agent (see onUpdate) - the
+   * backend reconciles tools against the new agent when it does. */
   schedule?: Schedule;
-  scheduleAgentName?: string;
   error: string | null;
   onClose: () => void;
   onCreate?: (agentId: string, values: CreateScheduleValues) => Promise<unknown>;
@@ -25,7 +24,6 @@ export function ScheduleModal({
   agents,
   defaultAgentId,
   schedule,
-  scheduleAgentName,
   error,
   onClose,
   onCreate,
@@ -156,7 +154,13 @@ export function ScheduleModal({
         trigger_message: triggerMessage,
         tools,
       };
-      const result = editing ? await onUpdate?.(values) : await onCreate?.(agentId, values);
+      // Editing always reports the currently-selected agent - unchanged
+      // from the schedule's own is a harmless no-op server-side, and
+      // switching it moves the schedule there (validated + tools
+      // reconciled against the new agent - see automation.controller).
+      const result = editing
+        ? await onUpdate?.({ ...values, agent_id: agentId })
+        : await onCreate?.(agentId, values);
       if (!result) {
         setLocalError((current) => current || t("scheduleCreateFailed"));
         return;
@@ -169,7 +173,7 @@ export function ScheduleModal({
 
   return (
     <div className="modal-backdrop" role="presentation" onMouseDown={(event) => event.target === event.currentTarget && onClose()}>
-      <form className="modal" role="dialog" aria-modal="true" aria-labelledby="schedule-modal-title" onSubmit={submit}>
+      <form className="modal schedule-modal" role="dialog" aria-modal="true" aria-labelledby="schedule-modal-title" onSubmit={submit}>
         <button type="button" className="close" onClick={onClose} aria-label={t("close")}><X size={20} /></button>
         <p className="eyebrow">{t("schedules")}</p>
         <h2 id="schedule-modal-title">{editing ? t("editSchedule") : t("scheduleHint")}</h2>
@@ -187,17 +191,13 @@ export function ScheduleModal({
             required
           />
         </label>
-        {editing ? (
-          <p className="schedule-modal-agent">{scheduleAgentName}</p>
-        ) : (
-          <label htmlFor="schedule-modal-agent">
-            {t("agentForSchedule")}
-            <select id="schedule-modal-agent" dir="ltr" value={agentId} disabled={saving || !agents.length} onChange={(event) => changeAgent(event.target.value)}>
-              {!agents.length && <option value="">{t("noAgents")}</option>}
-              {agents.map((agent) => <option key={agent.id} value={agent.id}>{agent.name}</option>)}
-            </select>
-          </label>
-        )}
+        <label htmlFor="schedule-modal-agent">
+          {t("agentForSchedule")}
+          <select id="schedule-modal-agent" dir="ltr" value={agentId} disabled={saving || !agents.length} onChange={(event) => changeAgent(event.target.value)}>
+            {!agents.length && <option value="">{t("noAgents")}</option>}
+            {agents.map((agent) => <option key={agent.id} value={agent.id}>{agent.name}</option>)}
+          </select>
+        </label>
         <label htmlFor="schedule-modal-description">
           {t("scheduleDescription")}
           <textarea

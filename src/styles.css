@@ -2774,6 +2774,11 @@ html[dir="rtl"] pre {
   box-shadow: var(--shadow-xl);
 }
 
+/* Title + agent picker + description + cron + tools checklist + test
+   preview crowd the default 460px width more than CreateAgentModal's
+   shorter form does - widen just this one rather than every .modal. */
+.modal.schedule-modal { width: 640px; max-width: calc(100vw - 48px); }
+
 .modal h2 {
   margin: var(--sp-1) 0 var(--sp-5);
   font-size: 22px;
@@ -2813,6 +2818,21 @@ html[dir="rtl"] pre {
   min-height: 110px;
   resize: vertical;
   line-height: 1.5;
+}
+
+/* .modal input's block/100%-width rule above has the same specificity as
+   .tool-list input's compact-toggle rule and comes later in the file, so
+   it was winning inside ScheduleModal's tools checklist - the toggle
+   checkboxes rendered as full-width orange bars instead of small
+   switches. Re-declaring at higher specificity (two classes) fixes it
+   regardless of source order, rather than relying on rule placement. */
+.modal .tool-list input {
+  display: block;
+  width: 36px;
+  height: 20px;
+  margin: 0;
+  padding: 0;
+  border: 0;
 }
 
 .modal-runtime-grid {

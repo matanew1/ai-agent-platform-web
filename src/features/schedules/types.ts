@@ -23,7 +23,7 @@ export type CreateScheduleValues = Pick<
 > &
   Partial<Pick<Schedule, "description" | "tools">>;
 export type ScheduleChanges = Partial<
-  Pick<Schedule, "title" | "description" | "cron_expression" | "trigger_message" | "tools" | "enabled">
+  Pick<Schedule, "agent_id" | "title" | "description" | "cron_expression" | "trigger_message" | "tools" | "enabled">
 >;
 
 /** A session created by a fired schedule gets a client-facing id starting

@@ -63,12 +63,25 @@ export function useAllSchedules(userId: string, agentIds: string[]) {
     setError(null);
     try {
       const updated = await schedulesApi.update(agentId, scheduleId, changes);
-      setSchedulesByAgent((current) => ({
-        ...current,
-        [agentId]: (current[agentId] || []).map((schedule) =>
-          schedule.id === updated.id ? updated : schedule,
-        ),
-      }));
+      setSchedulesByAgent((current) => {
+        // A `changes.agent_id` that differs from `agentId` moved the
+        // schedule server-side (see automation.controller) - it has to
+        // move between the per-agent lists here too, not just be replaced
+        // in place under its old agent, or it would keep showing (stale)
+        // under an agent it no longer belongs to. Both lists here are
+        // scrubbed of `updated.id` unconditionally (not just the "moved"
+        // branch) - when `agentId === updated.agent_id` an object literal
+        // with two entries for the same key collapses to the second, so an
+        // unfiltered `current[updated.agent_id]` would silently survive
+        // alongside the freshly-prepended `updated`, duplicating the card.
+        const withoutOld = (current[agentId] || []).filter((schedule) => schedule.id !== updated.id);
+        const newAgentList = (current[updated.agent_id] || []).filter((schedule) => schedule.id !== updated.id);
+        return {
+          ...current,
+          [agentId]: withoutOld,
+          [updated.agent_id]: [updated, ...newAgentList],
+        };
+      });
       return updated;
     } catch (reason) {
       setError(getErrorMessage(reason, "Unable to update schedule."));
