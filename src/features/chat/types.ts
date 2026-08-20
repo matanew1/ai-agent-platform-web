@@ -1,7 +1,7 @@
 export type ArtifactReference = { filename: string; download_url: string };
 export type IndexedChatDocument = { sourceId: string; chunks: number };
 export type RetrievedSource = { sourceId: string; excerpt: string; score: number };
-export type StoredRetrievedSource = { source_id: string; excerpt: string; score: number };
+type StoredRetrievedSource = { source_id: string; excerpt: string; score: number };
 
 export type ChatMetadata = {
   tools: string[];
