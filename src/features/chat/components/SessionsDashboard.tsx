@@ -166,7 +166,11 @@ export function SessionsDashboard({
               </button>
             </article>
           ))}
-          {!query && agentsWithMore.length > 0 && (
+          {/* Search only filters sessions already loaded per agent - a match
+             outside what's loaded must still be reachable via Load more
+             rather than reporting no results with no way to page it in, so
+             this stays available regardless of whether a query is active. */}
+          {agentsWithMore.length > 0 && (
             <button
               className="load-more"
               type="button"
@@ -185,7 +189,21 @@ export function SessionsDashboard({
         <div className="management-empty">
           <span className="empty-mark"><MessageSquarePlus size={20} /></span>
           <h2>{query ? t("noMatchingSessions") : t("noSessions")}</h2>
-          <p>{query ? t("tryDifferentSession") : t("sessionHint")}</p>
+          <p>{query ? (agentsWithMore.length > 0 ? t("noMatchingLoadedSessions") : t("tryDifferentSession")) : t("sessionHint")}</p>
+          {query && agentsWithMore.length > 0 && (
+            <button
+              className="load-more"
+              type="button"
+              disabled={!!loadingMoreAgentId}
+              onClick={() => agentsWithMore.forEach((agent) => onLoadMoreSessions(agent.id))}
+            >
+              {loadingMoreAgentId ? t("loading") : t("loadMore", {
+                count: String(agentsWithMore.reduce((sum, agent) => (
+                  sum + (totalByAgent[agent.id] ?? 0) - (sessionsByAgent[agent.id] || []).length
+                ), 0)),
+              })}
+            </button>
+          )}
           {!query && selectedAgent && <button className="primary" type="button" onClick={() => onNewSession(selectedAgent)}>{t("startSession")}</button>}
         </div>
       )}

@@ -48,7 +48,11 @@ export function DocumentsDashboard({
   const summary = loading
     ? t("loadingLibrary")
     : `${total} ${t("documents")} · ${totalChunks} ${t("indexed")} ${t("chunks")}`;
-  const hasMore = !query && documents.length < total;
+  // Search only filters the documents already loaded onto the page - a
+  // match outside that page must still let the user page it in rather than
+  // reporting "no matches" with no way to reach it, so this stays available
+  // regardless of whether a query is active.
+  const hasMore = documents.length < total;
 
   const requestDelete = (sourceId: string) => {
     if (window.confirm(t("deleteDocumentConfirm", { name: documentDisplayName(sourceId) }))) onDelete(sourceId);
@@ -128,7 +132,12 @@ export function DocumentsDashboard({
         <div className="management-empty">
           <span className="empty-mark"><FileUp size={20} /></span>
           <h2>{query ? t("noMatchingDocuments") : t("buildKnowledgeLibrary")}</h2>
-          <p>{query ? t("tryDifferentFilename") : t("uploadDocumentHint")}</p>
+          <p>{query ? (hasMore ? t("noMatchingLoadedDocuments") : t("tryDifferentFilename")) : t("uploadDocumentHint")}</p>
+          {query && hasMore && (
+            <button className="load-more" type="button" disabled={loadingMore} onClick={onLoadMore}>
+              {loadingMore ? t("loading") : t("loadMore", { count: String(total - documents.length) })}
+            </button>
+          )}
           {!query && <button className="primary" type="button" disabled={uploading} onClick={() => inputRef.current?.click()}><Upload size={15} /> {t("uploadDocument")}</button>}
         </div>
       )}
