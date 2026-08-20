@@ -1,9 +1,9 @@
-export type ModelOption = {
+type ModelOption = {
   id: string;
   label: string;
 };
 
-export type TemperatureRange = {
+type TemperatureRange = {
   min: number;
   max: number;
   step: number;

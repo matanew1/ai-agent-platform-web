@@ -4,7 +4,7 @@ import { DEFAULT_MODEL, DEFAULT_TEMPERATURE } from "../../../shared/config/const
 import { modelsApi } from "../api";
 import type { ModelCatalog } from "../types";
 
-export const FALLBACK_MODEL_CATALOG: ModelCatalog = {
+const FALLBACK_MODEL_CATALOG: ModelCatalog = {
   provider: "ollama",
   default_model: DEFAULT_MODEL,
   models: [{ id: DEFAULT_MODEL, label: DEFAULT_MODEL }],

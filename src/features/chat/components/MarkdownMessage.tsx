@@ -62,7 +62,7 @@ export const MarkdownMessage = memo(function MarkdownMessage({ content, streamin
   );
 });
 
-export const safeMarkdownUrl: UrlTransform = (url) => {
+const safeMarkdownUrl: UrlTransform = (url) => {
   const transformed = defaultUrlTransform(url);
   if (!transformed) return "";
 
