@@ -1,8 +1,9 @@
-import { Check, Languages, MenuSquare, MessageSquareText, Moon, ShieldCheck, Volume2, VolumeX } from "lucide-react";
+import { Check, Languages, LifeBuoy, MenuSquare, MessageSquareText, Moon, ShieldCheck, Volume2, VolumeX } from "lucide-react";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 
 import { type DashboardDestination, type WorkspaceIdentity } from "../../../components/layout/DashboardSidebar";
 import { ManagementPage } from "../../../components/layout/ManagementPage";
+import { FeedbackModal } from "../../feedback/components/FeedbackModal";
 import type { AppSettings, Locale, SpeechInputLocale, Theme } from "../../../shared/hooks/useAppSettings";
 import { useI18n } from "../../../shared/i18n/I18nProvider";
 
@@ -14,6 +15,7 @@ type Props = {
 
 export function SettingsDashboard({ identity, connected, settings, onChange, onReset, onSignOut, onNavigate }: Props) {
   const { t } = useI18n();
+  const [feedbackOpen, setFeedbackOpen] = useState(false);
   const set = <K extends keyof AppSettings>(key: K, value: AppSettings[K]) => onChange({ ...settings, [key]: value });
   return (
     <ManagementPage identity={identity} connected={connected} activeDestination="settings" title={t("settingsTitle")} summary={t("settingsSummary")} onSignOut={onSignOut} onNavigate={onNavigate}>
@@ -56,7 +58,11 @@ export function SettingsDashboard({ identity, connected, settings, onChange, onR
             <a href="/cookies">{t("cookies")}</a>
           </nav>
         </SettingsCard>
+        <SettingsCard icon={<LifeBuoy size={17} />} title={t("feedbackAndSupport")} description={t("feedbackAndSupportDescription")}>
+          <button className="secondary" type="button" onClick={() => setFeedbackOpen(true)}>{t("sendFeedback")}</button>
+        </SettingsCard>
       </div>
+      {feedbackOpen && <FeedbackModal onClose={() => setFeedbackOpen(false)} />}
     </ManagementPage>
   );
 }
