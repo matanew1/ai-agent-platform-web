@@ -140,6 +140,19 @@ const trackers = new WeakMap<Page, {
 
 test.beforeEach(async ({ page }) => { trackers.set(page, await mockPlatform(page)); });
 
+test("the sidebar account avatar renders as a circle, not an ellipse", async ({ page }) => {
+  // Regression test for a leftover CSS selector, `.sidebar-account >
+  // span:not(.sidebar-account-avatar)`, matching the WorkOS-photo/initials
+  // avatar span too (it doesn't carry the old class the selector excludes)
+  // and force-stretching it via flex: 1.
+  await page.goto("/agents");
+  const avatar = page.locator(".sidebar-account .account-avatar");
+  await expect(avatar).toBeVisible();
+  const box = await avatar.boundingBox();
+  expect(box).not.toBeNull();
+  expect(box!.width).toBeCloseTo(box!.height, 0);
+});
+
 test("settings persist, support Hebrew RTL, voices, and global accessibility controls", async ({ page }) => {
   await page.goto("/settings");
   await expect(page.getByRole("heading", { name: "Settings" })).toBeVisible();
