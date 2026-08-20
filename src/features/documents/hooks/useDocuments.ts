@@ -70,12 +70,18 @@ export function useDocuments(userId: string, onError: (message: string | null) =
     try {
       const result = await ingestDocument(file);
       if (activeUser.current === requestUser) {
-        const isNew = !documents.some((document) => document.name === result.source_id);
-        setDocuments((current) => [
-          { name: result.source_id, chunks: result.chunks_indexed, status: "indexed" },
-          ...current.filter((document) => document.name !== result.source_id),
-        ]);
-        if (isNew) setTotal((total) => total + 1);
+        // Compute "is this new" from the functional updater's own `current`,
+        // not the `documents` closed over when `upload` was called - two
+        // uploads resolving between renders would otherwise both read the
+        // same stale snapshot and double-count the same new document.
+        setDocuments((current) => {
+          const isNew = !current.some((document) => document.name === result.source_id);
+          if (isNew) setTotal((total) => total + 1);
+          return [
+            { name: result.source_id, chunks: result.chunks_indexed, status: "indexed" },
+            ...current.filter((document) => document.name !== result.source_id),
+          ];
+        });
       }
     } catch (reason) {
       if (activeUser.current === requestUser) onError(getErrorMessage(reason, "Document upload failed."));
@@ -105,12 +111,17 @@ export function useDocuments(userId: string, onError: (message: string | null) =
   const addIndexed = (indexed: IndexedChatDocument[]) => {
     if (!indexed.length) return;
     const added = indexed.map((document) => ({ name: document.sourceId, chunks: document.chunks, status: "indexed" as const }));
-    const newCount = added.filter((item) => !documents.some((document) => document.name === item.name)).length;
-    setDocuments((current) => [
-      ...added,
-      ...current.filter((document) => !indexed.some((item) => item.sourceId === document.name)),
-    ]);
-    if (newCount) setTotal((total) => total + newCount);
+    // Same reasoning as upload() above: derive newCount from the updater's
+    // own `current`, not the closed-over `documents`, to avoid double-
+    // counting when this races another mutation between renders.
+    setDocuments((current) => {
+      const newCount = added.filter((item) => !current.some((document) => document.name === item.name)).length;
+      if (newCount) setTotal((total) => total + newCount);
+      return [
+        ...added,
+        ...current.filter((document) => !indexed.some((item) => item.sourceId === document.name)),
+      ];
+    });
   };
 
   return { documents, total, loading, loadingMore, uploading, deleting, upload, remove, addIndexed, loadMore };
