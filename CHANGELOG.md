@@ -2,6 +2,19 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [0.9.0](https://github.com/matanew1/ai-agent-platform-web/compare/v0.8.0...v0.9.0) (2026-08-20)
+
+
+### Features
+
+* **sidebar:** unify the workspace sidebar with the dashboard sidebar ([611af3f](https://github.com/matanew1/ai-agent-platform-web/commit/611af3f3e16822a28696474403e93504ef8d05a0))
+
+
+### Bug Fixes
+
+* address code-review findings on the sidebar unification ([bc9414e](https://github.com/matanew1/ai-agent-platform-web/commit/bc9414e411bac6488ff4a93c19c8af4dbe69e6b2))
+* **tooltip:** reposition the bubble on resize and scroll, not just open ([b512dc0](https://github.com/matanew1/ai-agent-platform-web/commit/b512dc0f6033f8b334a6ece9bb6681aa5cd30826))
+
 ## [0.8.0](https://github.com/matanew1/ai-agent-platform-web/compare/v0.7.0...v0.8.0) (2026-08-20)
 
 
