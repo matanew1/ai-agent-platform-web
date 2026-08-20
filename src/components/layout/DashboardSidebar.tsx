@@ -1,25 +1,27 @@
-import { Bot, Clock, FileText, Layers, MessageSquare } from "lucide-react";
+import { Bot, Clock, FileText, LayoutDashboard, Layers, MessageSquare } from "lucide-react";
 import type { ComponentType } from "react";
 import { Brand } from "../../shared/ui/Brand";
 import { APP_VERSION } from "../../shared/config/version";
 import { useI18n } from "../../shared/i18n/I18nProvider";
 import { SidebarFooter } from "./SidebarFooter";
 
-export type DashboardDestination = "agents" | "sessions" | "schedules" | "documents" | "tools" | "settings";
+export type DashboardDestination = "overview" | "agents" | "sessions" | "schedules" | "documents" | "tools" | "settings" | "profile";
 
 export type WorkspaceIdentity = {
   id: string;
   displayName: string;
   email: string;
+  avatarUrl?: string | null;
 };
 
 type NavItem = {
-  label: "agents" | "sessions" | "schedules" | "documents" | "tools";
+  label: "overview" | "agents" | "sessions" | "schedules" | "documents" | "tools";
   destination: DashboardDestination | null;
   icon: ComponentType<{ size?: number; className?: string }>;
 };
 
 const navigation: NavItem[] = [
+  { label: "overview", destination: "overview", icon: LayoutDashboard },
   { label: "agents", destination: "agents", icon: Bot },
   { label: "sessions", destination: "sessions", icon: MessageSquare },
   { label: "schedules", destination: "schedules", icon: Clock },
@@ -40,7 +42,7 @@ export function DashboardSidebar({ identity, connected, onSignOut, onNavigate, a
   return (
     <aside className="dashboard-sidebar">
       <Brand />
-      <small className="app-version">AI Platform v{APP_VERSION}</small>
+      <small className="app-version">Wyrmind v{APP_VERSION}</small>
       <nav className="dashboard-nav" aria-label="Workspace navigation">
         {navigation.map((item) => {
           const disabled = item.destination === null;
@@ -69,8 +71,10 @@ export function DashboardSidebar({ identity, connected, onSignOut, onNavigate, a
         identity={identity}
         settingsLabel={t("settings")}
         signOutLabel={t("signOut")}
+        profileLabel={t("viewProfile")}
         settingsActive={activeDestination === "settings"}
         onSettings={() => onNavigate("settings")}
+        onProfile={() => onNavigate("profile")}
         onSignOut={onSignOut}
       />
     </aside>

@@ -12,25 +12,71 @@ const settings = {
   speech_voice_en: "preferred", speech_voice_he: "preferred",
 };
 
-async function mockPlatform(page: Page) {
+type ToolStub = { name: string; description: string; parameters: Record<string, unknown> };
+
+async function mockPlatform(
+  page: Page,
+  options: { documentCount?: number; initialTools?: ToolStub[] } = {},
+) {
   let savedSettings = { ...settings };
   const savedSchedules: Array<Record<string, unknown>> = [];
   const deletedSessionIds: string[] = [];
+  const allDocuments = Array.from({ length: options.documentCount ?? 0 }, (_, index) => (
+    { source_id: `doc-${index}.pdf`, chunks_indexed: 1, status: "indexed" }
+  ));
+  let accountDeleted = false;
+  const submittedFeedback: Array<Record<string, unknown>> = [];
+  const createdAgents: Array<Record<string, unknown>> = [];
+  let currentTools: ToolStub[] = options.initialTools ?? [
+    { name: "extract_pdf", description: "Read a PDF", parameters: {} },
+  ];
   await page.route("http://localhost:8000/**", async (route) => {
     const request = route.request();
     const url = new URL(request.url());
     const path = url.pathname;
     const respond = (body: unknown, status = 200, headers: Record<string, string> = {}) => route.fulfill({ status, contentType: "application/json", body: JSON.stringify(body), headers });
     if (path === "/auth/me") return respond({ id: "e2e-user", email: "e2e@example.com", display_name: "E2E User", avatar_url: null });
+    if (path === "/auth/account" && request.method() === "DELETE") {
+      accountDeleted = true;
+      return route.fulfill({ status: 204 });
+    }
+    if (path === "/auth/logout") return route.fulfill({ status: 302, headers: { location: "/" } });
     if (path === "/settings") {
       if (request.method() === "PUT") savedSettings = JSON.parse(request.postData() || "{}");
       return respond(savedSettings);
     }
-    if (path === "/agents") return respond([agent]);
-    if (path === "/tools") return respond([{ name: "extract_pdf", description: "Read a PDF", parameters: {} }]);
+    if (path === "/feedback" && request.method() === "POST") {
+      submittedFeedback.push(JSON.parse(request.postData() || "{}"));
+      return respond({ id: "fb-1", created_at: new Date().toISOString() }, 201);
+    }
+    if (path === "/agents" && request.method() === "GET") return respond([agent]);
+    if (path === "/agents" && request.method() === "POST") {
+      const payload = JSON.parse(request.postData() || "{}");
+      const knownNames = currentTools.map((tool) => tool.name);
+      const unknown = ((payload.allowed_tools ?? []) as string[]).filter((name) => !knownNames.includes(name));
+      if (unknown.length) return respond({ detail: `Unknown tool names: ${JSON.stringify(unknown)}` }, 422);
+      const created = { ...agent, id: "new-agent", name: payload.name, allowed_tools: payload.allowed_tools };
+      createdAgents.push(created);
+      return respond(created, 201);
+    }
+    if (path === "/tools") return respond(currentTools);
     if (path === "/models") return respond({ provider: "ollama", default_model: "qwen3:8b", models: [{ id: "qwen3:8b", label: "qwen3:8b" }], temperature: { min: 0, max: 1, step: 0.1, default: 0.3 } });
-    if (path === "/documents") return respond([]);
-    if (path === `/agents/${agent.id}/sessions`) return respond([]);
+    if (path === "/documents") {
+      const limit = Number(url.searchParams.get("limit") || 20);
+      const offset = Number(url.searchParams.get("offset") || 0);
+      return respond({
+        items: allDocuments.slice(offset, offset + limit),
+        total: allDocuments.length,
+        limit,
+        offset,
+      });
+    }
+    // Any agent's session list, not just the fixed CV Expert fixture's - a
+    // newly created agent (id assigned by the POST /agents mock above) needs
+    // this route to behave the same way a real backend would for any valid
+    // agent id, or its workspace crashes reading `.items` off an unmocked
+    // fallback response.
+    if (/^\/agents\/[^/]+\/sessions$/.test(path)) return respond({ items: [], total: 0, limit: 20, offset: 0 });
     if (path.startsWith(`/agents/${agent.id}/sessions/`) && request.method() === "DELETE") {
       deletedSessionIds.push(decodeURIComponent(path.split("/").pop() || ""));
       return route.fulfill({ status: 204 });
@@ -61,6 +107,10 @@ async function mockPlatform(page: Page) {
         return respond(savedSchedules[index]);
       }
     }
+    if (path === `/agents/${agent.id}/draft/rewrite`) {
+      const draft = JSON.parse(request.postData() || "{}").message;
+      return respond({ message: `Enhanced: ${draft}` });
+    }
     if (path === `/agents/${agent.id}/chat/stream`) {
       const message = JSON.parse(request.postData() || "{}").message;
       if (message === "Stop this response") await new Promise((resolve) => setTimeout(resolve, 500));
@@ -71,12 +121,37 @@ async function mockPlatform(page: Page) {
     }
     return respond({});
   });
-  return { deletedSessionIds };
+  return {
+    deletedSessionIds,
+    isAccountDeleted: () => accountDeleted,
+    submittedFeedback,
+    createdAgents,
+    dropTool: (name: string) => { currentTools = currentTools.filter((tool) => tool.name !== name); },
+  };
 }
 
-const trackers = new WeakMap<Page, { deletedSessionIds: string[] }>();
+const trackers = new WeakMap<Page, {
+  deletedSessionIds: string[];
+  isAccountDeleted: () => boolean;
+  submittedFeedback: Array<Record<string, unknown>>;
+  createdAgents: Array<Record<string, unknown>>;
+  dropTool: (name: string) => void;
+}>();
 
 test.beforeEach(async ({ page }) => { trackers.set(page, await mockPlatform(page)); });
+
+test("the sidebar account avatar renders as a circle, not an ellipse", async ({ page }) => {
+  // Regression test for a leftover CSS selector, `.sidebar-account >
+  // span:not(.sidebar-account-avatar)`, matching the WorkOS-photo/initials
+  // avatar span too (it doesn't carry the old class the selector excludes)
+  // and force-stretching it via flex: 1.
+  await page.goto("/agents");
+  const avatar = page.locator(".sidebar-account .account-avatar");
+  await expect(avatar).toBeVisible();
+  const box = await avatar.boundingBox();
+  expect(box).not.toBeNull();
+  expect(box!.width).toBeCloseTo(box!.height, 0);
+});
 
 test("settings persist, support Hebrew RTL, voices, and global accessibility controls", async ({ page }) => {
   await page.goto("/settings");
@@ -97,17 +172,147 @@ test("workspace drawer, avatars, chat streaming, voice controls, and attachments
   await expect(page.locator(".workspace")).toHaveClass(/sidebar-closed/);
   await page.getByRole("button", { name: "Open sidebar" }).click();
   await expect(page.locator(".workspace")).toHaveClass(/sidebar-open/);
-  await page.getByRole("button", { name: "Choose avatar" }).click();
-  await page.locator(".account-avatar-menu .account-avatar").nth(2).click();
   await page.getByPlaceholder("Message CV Expert").fill("Please review my CV");
   await page.getByRole("button", { name: "Send message" }).click();
   await expect(page.getByText("Your CV is ready for review.")).toBeVisible();
-  await expect(page.locator(".message-avatar-user")).toHaveAttribute("src", /fox\.svg$/);
+  await expect(page.locator(".message-avatar-user .account-avatar-initials")).toHaveText("EU");
   await expect(page.locator(".message-avatar-assistant")).toBeVisible();
   await expect(page.getByRole("button", { name: "Read aloud" })).toBeVisible();
   await expect(page.getByRole("button", { name: "Start voice input" })).toBeVisible();
   await page.getByRole("button", { name: "More message actions" }).click();
   await expect(page.getByRole("menuitem", { name: "Attach file" })).toBeVisible();
+});
+
+test("expanding the system prompt opens a larger editor bound to the same value", async ({ page }) => {
+  await page.goto("/agents/cv-expert");
+  const inlineEditor = page.locator(".prompt-editor").first();
+  await expect(inlineEditor).toHaveValue(agent.system_prompt);
+
+  await page.getByRole("button", { name: "Expand editor" }).click();
+  const expandedEditor = page.locator(".prompt-editor-expanded");
+  await expect(expandedEditor).toBeVisible();
+  await expect(expandedEditor).toHaveValue(agent.system_prompt);
+
+  await expandedEditor.fill("Updated system prompt for testing.");
+  await page.keyboard.press("Escape");
+  await expect(expandedEditor).not.toBeVisible();
+  await expect(inlineEditor).toHaveValue("Updated system prompt for testing.");
+});
+
+test("creating an agent refetches tools instead of sending a stale list that no longer matches the registry", async ({ page }) => {
+  // The dashboard loads with a filesystem tool registered; by the time the
+  // create-agent modal is submitted, that tool has dropped out of the
+  // registry (e.g. its MCP server going away) - regression coverage for
+  // CreateAgentModal sending a since-removed tool name and getting a 422
+  // back, fixed by refetching /tools right before submit instead of
+  // trusting the list as of when the modal opened.
+  const tracker = trackers.set(page, await mockPlatform(page, {
+    initialTools: [
+      { name: "extract_pdf", description: "Read a PDF", parameters: {} },
+      { name: "write_file", description: "Write a file", parameters: {} },
+    ],
+  })).get(page)!;
+  await page.goto("/agents");
+  await expect(page.getByRole("button", { name: "New agent" }).first()).toBeVisible();
+
+  // The registry drifts while the dashboard (and, once opened, the modal)
+  // is already showing the wider tool list.
+  tracker.dropTool("write_file");
+
+  await page.getByRole("button", { name: "New agent" }).first().click();
+  await page.getByLabel("Name").fill("Fresh Agent");
+  await page.getByRole("dialog").getByRole("button", { name: "Create agent" }).click();
+
+  // The modal only closes on a successful creation (App.tsx's createAgent
+  // keeps it open and shows the alert on failure) - waiting for it to close
+  // is what actually waits out the async refetch-then-POST, rather than
+  // racing the plain (non-retrying) createdAgents assertion below against it.
+  await expect(page.getByRole("dialog")).toHaveCount(0);
+  await expect(page.getByRole("alert")).toHaveCount(0);
+  expect(tracker.createdAgents).toHaveLength(1);
+  expect(tracker.createdAgents[0].allowed_tools).toEqual(["extract_pdf"]);
+});
+
+test("the Overview page shows a welcome header, KPIs, and links to an agent", async ({ page }) => {
+  await page.goto("/overview");
+
+  await expect(page.getByRole("heading", { name: "Welcome back, E2E" })).toBeVisible();
+  await expect(page.locator(".stat-tile")).toHaveCount(4);
+  await expect(page.locator(".stat-tile", { hasText: "Agents" })).toContainText("1");
+
+  await page.getByRole("button", { name: "CV Expert" }).click();
+
+  await expect(page).toHaveURL(/\/agents\/cv-expert$/);
+});
+
+test("sending feedback from Settings submits the category and message", async ({ page }) => {
+  await page.goto("/settings");
+  await page.getByRole("button", { name: "Send feedback" }).click();
+  await page.getByRole("button", { name: "Report a bug" }).click();
+  await page.getByLabel("What went wrong?").fill("The export button does nothing.");
+
+  await page.getByRole("button", { name: "Send", exact: true }).click();
+
+  await expect(page.getByText("Thanks!")).toBeVisible();
+  await expect.poll(() => trackers.get(page)!.submittedFeedback).toEqual([
+    { category: "bug", message: "The export button does nothing.", context_path: "/settings" },
+  ]);
+});
+
+test("deleting the account requires typing DELETE, then calls the API and signs out", async ({ page }) => {
+  await page.goto("/profile");
+  await page.getByRole("button", { name: "Delete account" }).click();
+  const confirmButton = page.getByRole("button", { name: "Permanently delete my data" });
+  await expect(confirmButton).toBeDisabled();
+
+  await page.getByLabel(/Type DELETE to confirm/).fill("nope");
+  await expect(confirmButton).toBeDisabled();
+  await page.getByLabel(/Type DELETE to confirm/).fill("DELETE");
+  await expect(confirmButton).toBeEnabled();
+
+  await confirmButton.click();
+
+  await expect.poll(() => trackers.get(page)!.isAccountDeleted()).toBe(true);
+});
+
+test("the document library paginates with a Load more control", async ({ page }) => {
+  await mockPlatform(page, { documentCount: 25 });
+  await page.goto("/documents");
+
+  await expect(page.locator(".management-row")).toHaveCount(20);
+  await expect(page.getByRole("button", { name: /Load 5 more/ })).toBeVisible();
+
+  await page.getByRole("button", { name: /Load 5 more/ }).click();
+
+  await expect(page.locator(".management-row")).toHaveCount(25);
+  await expect(page.getByRole("button", { name: /Load .* more/ })).toHaveCount(0);
+});
+
+test("enhancing a draft replaces the composer text with the rewritten message", async ({ page }) => {
+  await page.goto("/agents/cv-expert");
+  const composer = page.getByPlaceholder("Message CV Expert");
+  await composer.fill("review my cv");
+  const enhanceButton = page.getByRole("button", { name: "Enhance message" });
+  await expect(enhanceButton).toBeEnabled();
+
+  await enhanceButton.click();
+
+  await expect(composer).toHaveValue("Enhanced: review my cv");
+});
+
+test("clearing a chat wipes its messages but keeps the same session open", async ({ page }) => {
+  await page.goto("/agents/cv-expert");
+  await page.getByPlaceholder("Message CV Expert").fill("Please review my CV");
+  await page.getByRole("button", { name: "Send message" }).click();
+  await expect(page.getByText("Your CV is ready for review.")).toBeVisible();
+
+  page.once("dialog", (dialog) => void dialog.accept());
+  await page.getByRole("button", { name: "Clear chat" }).click();
+
+  await expect(page.getByText("Your CV is ready for review.")).not.toBeVisible();
+  await expect(page.getByRole("heading", { name: "New conversation" })).toBeVisible();
+  await expect(page.locator(".workspace")).toBeVisible();
+  await expect.poll(() => trackers.get(page)!.deletedSessionIds.length).toBe(1);
 });
 
 test("stopping a response aborts the browser request", async ({ page }) => {
@@ -206,7 +411,7 @@ test("clicking a schedule card opens its dedicated history page, not the chat wo
 });
 
 test("main screens and configuration controls stay within their containers", async ({ page }) => {
-  for (const route of ["/agents", "/sessions", "/schedules", "/schedules/sched-1", "/documents", "/tools", "/settings", "/agents/cv-expert"]) {
+  for (const route of ["/overview", "/agents", "/sessions", "/schedules", "/schedules/sched-1", "/documents", "/tools", "/settings", "/profile", "/agents/cv-expert"]) {
     await page.goto(route);
     await expect(page.locator("main.app-shell")).toBeVisible();
     const overflowing = await page.evaluate(() => {

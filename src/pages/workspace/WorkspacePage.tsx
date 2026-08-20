@@ -34,6 +34,7 @@ type WorkspacePageProps = {
   onSelectAgent: (agent: Agent) => void;
   onSelectSession: (sessionId: string) => void;
   onDeleteSession: (sessionId: string) => Promise<void>;
+  onClearSession: (sessionId: string) => Promise<void>;
   onCreateAgent: () => void;
   onNewSession: () => void;
   onUpdateSession: (agentId: string, sessionId: string, updater: (session: Session) => Session) => void;
@@ -53,6 +54,7 @@ type WorkspacePageProps = {
   speechInputLocale: AppSettings["speechInputLocale"];
   onDashboard: () => void;
   onSettings: () => void;
+  onProfile: () => void;
   onSignOut?: () => void;
 };
 
@@ -126,11 +128,13 @@ export function WorkspacePage(props: WorkspacePageProps) {
         onCreateAgent={props.onCreateAgent}
         onDashboard={props.onDashboard}
         onSettings={props.onSettings}
+        onProfile={props.onProfile}
         onSignOut={props.onSignOut}
       />
       <ChatPane
         agent={props.agent}
-        userId={props.identity.id}
+        userName={props.identity.displayName}
+        userAvatarUrl={props.identity.avatarUrl}
         sidebarOpen={sidebarOpen}
         autoReadResponses={props.autoReadResponses}
         sendOnEnter={props.sendOnEnter}
@@ -147,6 +151,8 @@ export function WorkspacePage(props: WorkspacePageProps) {
         onSubmit={chat.send}
         onStop={chat.stop}
         onNewSession={props.onNewSession}
+        onClearSession={() => { if (props.currentSession) void props.onClearSession(props.currentSession.id); }}
+        onError={props.onError}
         onToggleSidebar={() => setSidebarOpen((open) => !open)}
         showSources={props.showSources}
         showToolActivity={props.showToolActivity}

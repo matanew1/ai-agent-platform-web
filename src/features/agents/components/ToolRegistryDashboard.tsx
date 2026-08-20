@@ -1,9 +1,10 @@
 import { useMemo, useState } from "react";
-import { ChevronDown, ChevronUp, Layers, Wrench } from "lucide-react";
+import { ChevronDown, ChevronRight, ChevronUp, Layers, Wrench } from "lucide-react";
 
 import { type DashboardDestination, type WorkspaceIdentity } from "../../../components/layout/DashboardSidebar";
 import { ManagementPage } from "../../../components/layout/ManagementPage";
 import { useI18n } from "../../../shared/i18n/I18nProvider";
+import { groupToolsBySource, sourceIcon } from "../toolGrouping";
 import type { Tool } from "../types";
 
 type ToolRegistryDashboardProps = {
@@ -24,6 +25,7 @@ export function ToolRegistryDashboard({
   const { t } = useI18n();
   const [query, setQuery] = useState("");
   const [expandedTool, setExpandedTool] = useState<string | null>(null);
+  const [collapsedGroups, setCollapsedGroups] = useState<Set<string>>(new Set());
   const visibleTools = useMemo(() => {
     const normalized = query.trim().toLowerCase();
     if (!normalized) return tools;
@@ -31,6 +33,16 @@ export function ToolRegistryDashboard({
       tool.name.toLowerCase().includes(normalized) || tool.description.toLowerCase().includes(normalized)
     ));
   }, [query, tools]);
+  const groups = useMemo(() => groupToolsBySource(visibleTools), [visibleTools]);
+
+  function toggleGroup(source: string) {
+    setCollapsedGroups((current) => {
+      const next = new Set(current);
+      if (next.has(source)) next.delete(source);
+      else next.add(source);
+      return next;
+    });
+  }
 
   return (
     <ManagementPage
@@ -51,52 +63,78 @@ export function ToolRegistryDashboard({
       )}
     >
       {visibleTools.length ? (
-        <div className="tool-registry-list" aria-label={t("registeredTools")}>
-          {visibleTools.map((tool) => {
-            const expanded = expandedTool === tool.name;
-            const parameters = toolParameters(tool);
+        <div className="tool-registry-tree" aria-label={t("registeredTools")}>
+          {groups.map((group) => {
+            const collapsed = collapsedGroups.has(group.source);
+            const GroupIcon = sourceIcon(group.source);
+            const groupLabel = group.source === "local"
+              ? t("localTools")
+              : t("mcpServerGroup", { name: group.source });
             return (
-              <article className={`tool-registry-card ${expanded ? "expanded" : ""}`} key={tool.name}>
+              <section className="tool-registry-group" key={group.source}>
                 <button
-                  className="tool-card-summary"
+                  className="tool-group-header"
                   type="button"
-                  aria-expanded={expanded}
-                  onClick={() => setExpandedTool(expanded ? null : tool.name)}
+                  aria-expanded={!collapsed}
+                  onClick={() => toggleGroup(group.source)}
                 >
-                  <span className="tool-glyph" aria-hidden="true"><Wrench size={16} /></span>
-                  <span className="management-row-copy">
-                    <strong>{tool.name}</strong>
-                    <small>{tool.description}</small>
-                  </span>
-                  <span className="tool-card-meta">
-                    <span>{parameters.length} {t(parameters.length === 1 ? "argument" : "arguments")}</span>
-                    <span className="status-pill available"><i />{t("available")}</span>
-                    <b aria-hidden="true">{expanded ? <ChevronUp size={16} /> : <ChevronDown size={16} />}</b>
-                  </span>
+                  <b aria-hidden="true">{collapsed ? <ChevronRight size={16} /> : <ChevronDown size={16} />}</b>
+                  <span className="tool-group-glyph" aria-hidden="true"><GroupIcon size={16} /></span>
+                  <strong>{groupLabel}</strong>
+                  <span className="tool-group-count">{t("toolGroupCount", { count: String(group.tools.length) })}</span>
                 </button>
-                {expanded && (
-                  <div className="tool-card-details">
-                    <p className="eyebrow">{t("inputSchema")}</p>
-                    {parameters.length ? (
-                      <div className="tool-parameters">
-                        {parameters.map((parameter) => (
-                          <div key={parameter.name}>
-                            <code>{parameter.name}</code>
-                            <span>{parameter.type}{parameter.required ? ` · ${t("required")}` : ` · ${t("optional")}`}</span>
-                            {parameter.description && <p>{parameter.description}</p>}
-                          </div>
-                        ))}
-                      </div>
-                    ) : (
-                      <p className="tool-no-arguments">{t("noToolArguments")}</p>
-                    )}
-                    <details className="raw-schema">
-                      <summary>{t("rawJsonSchema")}</summary>
-                      <pre><code>{JSON.stringify(tool.parameters, null, 2)}</code></pre>
-                    </details>
+                {!collapsed && (
+                  <div className="tool-registry-list">
+                    {group.tools.map((tool) => {
+                      const expanded = expandedTool === tool.name;
+                      const parameters = toolParameters(tool);
+                      return (
+                        <article className={`tool-registry-card ${expanded ? "expanded" : ""}`} key={tool.name}>
+                          <button
+                            className="tool-card-summary"
+                            type="button"
+                            aria-expanded={expanded}
+                            onClick={() => setExpandedTool(expanded ? null : tool.name)}
+                          >
+                            <span className="tool-glyph" aria-hidden="true"><Wrench size={16} /></span>
+                            <span className="management-row-copy">
+                              <strong>{tool.name}</strong>
+                              <small>{tool.description}</small>
+                            </span>
+                            <span className="tool-card-meta">
+                              <span>{parameters.length} {t(parameters.length === 1 ? "argument" : "arguments")}</span>
+                              <span className="status-pill available"><i />{t("available")}</span>
+                              <b aria-hidden="true">{expanded ? <ChevronUp size={16} /> : <ChevronDown size={16} />}</b>
+                            </span>
+                          </button>
+                          {expanded && (
+                            <div className="tool-card-details">
+                              <p className="eyebrow">{t("inputSchema")}</p>
+                              {parameters.length ? (
+                                <div className="tool-parameters">
+                                  {parameters.map((parameter) => (
+                                    <div key={parameter.name}>
+                                      <code>{parameter.name}</code>
+                                      <span>{parameter.type}{parameter.required ? ` · ${t("required")}` : ` · ${t("optional")}`}</span>
+                                      {parameter.description && <p>{parameter.description}</p>}
+                                    </div>
+                                  ))}
+                                </div>
+                              ) : (
+                                <p className="tool-no-arguments">{t("noToolArguments")}</p>
+                              )}
+                              <details className="raw-schema">
+                                <summary>{t("rawJsonSchema")}</summary>
+                                <pre><code>{JSON.stringify(tool.parameters, null, 2)}</code></pre>
+                              </details>
+                            </div>
+                          )}
+                        </article>
+                      );
+                    })}
                   </div>
                 )}
-              </article>
+              </section>
             );
           })}
         </div>

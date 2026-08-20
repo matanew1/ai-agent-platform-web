@@ -10,26 +10,32 @@ type DocumentsDashboardProps = {
   identity: WorkspaceIdentity;
   connected: boolean;
   documents: IndexedDocument[];
+  total: number;
   loading: boolean;
+  loadingMore: boolean;
   uploading: boolean;
   deleting: string | null;
   onSignOut?: () => void;
   onNavigate: (destination: DashboardDestination) => void;
   onUpload: (event: ChangeEvent<HTMLInputElement>) => void;
   onDelete: (sourceId: string) => void;
+  onLoadMore: () => void;
 };
 
 export function DocumentsDashboard({
   identity,
   connected,
   documents,
+  total,
   loading,
+  loadingMore,
   uploading,
   deleting,
   onSignOut,
   onNavigate,
   onUpload,
   onDelete,
+  onLoadMore,
 }: DocumentsDashboardProps) {
   const { t } = useI18n();
   const [query, setQuery] = useState("");
@@ -41,7 +47,12 @@ export function DocumentsDashboard({
   const totalChunks = documents.reduce((total, document) => total + document.chunks, 0);
   const summary = loading
     ? t("loadingLibrary")
-    : `${documents.length} ${t("documents")} · ${totalChunks} ${t("indexed")} ${t("chunks")}`;
+    : `${total} ${t("documents")} · ${totalChunks} ${t("indexed")} ${t("chunks")}`;
+  // Search only filters the documents already loaded onto the page - a
+  // match outside that page must still let the user page it in rather than
+  // reporting "no matches" with no way to reach it, so this stays available
+  // regardless of whether a query is active.
+  const hasMore = documents.length < total;
 
   const requestDelete = (sourceId: string) => {
     if (window.confirm(t("deleteDocumentConfirm", { name: documentDisplayName(sourceId) }))) onDelete(sourceId);
@@ -111,12 +122,22 @@ export function DocumentsDashboard({
               </button>
             </article>
           ))}
+          {hasMore && (
+            <button className="load-more" type="button" disabled={loadingMore} onClick={onLoadMore}>
+              {loadingMore ? t("loading") : t("loadMore", { count: String(total - documents.length) })}
+            </button>
+          )}
         </div>
       ) : (
         <div className="management-empty">
           <span className="empty-mark"><FileUp size={20} /></span>
           <h2>{query ? t("noMatchingDocuments") : t("buildKnowledgeLibrary")}</h2>
-          <p>{query ? t("tryDifferentFilename") : t("uploadDocumentHint")}</p>
+          <p>{query ? (hasMore ? t("noMatchingLoadedDocuments") : t("tryDifferentFilename")) : t("uploadDocumentHint")}</p>
+          {query && hasMore && (
+            <button className="load-more" type="button" disabled={loadingMore} onClick={onLoadMore}>
+              {loadingMore ? t("loading") : t("loadMore", { count: String(total - documents.length) })}
+            </button>
+          )}
           {!query && <button className="primary" type="button" disabled={uploading} onClick={() => inputRef.current?.click()}><Upload size={15} /> {t("uploadDocument")}</button>}
         </div>
       )}

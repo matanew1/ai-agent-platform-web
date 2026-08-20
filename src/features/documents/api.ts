@@ -1,4 +1,5 @@
 import { apiRequest } from "../../shared/api/client";
+import { DEFAULT_PAGE_LIMIT, type Page } from "../../shared/api/pagination";
 import type { StoredDocument } from "./types";
 
 export async function ingestDocument(file: File) {
@@ -10,8 +11,14 @@ export async function ingestDocument(file: File) {
   );
 }
 
-export function listDocuments(signal?: AbortSignal) {
-  return apiRequest<StoredDocument[]>("/documents", { signal });
+export function listDocuments(
+  { limit = DEFAULT_PAGE_LIMIT, offset = 0 }: { limit?: number; offset?: number } = {},
+  signal?: AbortSignal,
+) {
+  return apiRequest<Page<StoredDocument>>(
+    `/documents?limit=${limit}&offset=${offset}`,
+    { signal },
+  );
 }
 
 export function deleteDocument(sourceId: string) {
