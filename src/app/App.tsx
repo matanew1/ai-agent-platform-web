@@ -8,6 +8,8 @@ import type { Agent, CreateAgentValues } from "../features/agents/types";
 import { SessionsDashboard } from "../features/chat/components/SessionsDashboard";
 import { useChatSessions } from "../features/chat/hooks/useChatSessions";
 import { DocumentsDashboard } from "../features/documents/components/DocumentsDashboard";
+import { OverviewDashboard } from "../features/overview/components/OverviewDashboard";
+import { ProfileDashboard } from "../features/profile/components/ProfileDashboard";
 import { SettingsDashboard } from "../features/settings/components/SettingsDashboard";
 import { useDocuments } from "../features/documents/hooks/useDocuments";
 import { useModelCatalog } from "../features/models/hooks/useModelCatalog";
@@ -24,7 +26,7 @@ import { Notice } from "../shared/ui/Notice";
 import { useAppSettings } from "../shared/hooks/useAppSettings";
 import { I18nProvider } from "../shared/i18n/I18nProvider";
 
-type View = "dashboard" | "workspace" | "sessions" | "schedules" | "schedule-detail" | "documents" | "tools" | "settings";
+type View = "overview" | "dashboard" | "workspace" | "sessions" | "schedules" | "schedule-detail" | "documents" | "tools" | "settings" | "profile";
 type InspectorTab = "config" | "documents" | "traces";
 
 type Route = { view: View; agentSlug: string | null; scheduleId: string | null };
@@ -54,13 +56,14 @@ export default function App({ currentUser, onSignOut }: AppProps) {
     id: currentUser.id,
     displayName: currentUser.displayName,
     email: currentUser.email,
-  }), [currentUser.id, currentUser.displayName, currentUser.email]);
+    avatarUrl: currentUser.avatarUrl,
+  }), [currentUser.id, currentUser.displayName, currentUser.email, currentUser.avatarUrl]);
 
   const stats = useMemo(() => ({
     agents: agentsState.agents.length,
     sessions: sessions.sessionCount,
-    documents: documents.documents.length,
-  }), [agentsState.agents.length, documents.documents.length, sessions.sessionCount]);
+    documents: documents.total,
+  }), [agentsState.agents.length, documents.total, sessions.sessionCount]);
 
   const scheduleDetail = useMemo(() => {
     if (!route.scheduleId) return null;
@@ -170,6 +173,7 @@ export default function App({ currentUser, onSignOut }: AppProps) {
           onSelectAgent={openAgent}
           onSelectSession={sessions.selectSession}
           onDeleteSession={(sessionId) => sessions.removeSession(agentsState.selectedAgent!.id, sessionId)}
+          onClearSession={(sessionId) => sessions.clearSession(agentsState.selectedAgent!.id, sessionId)}
           onCreateAgent={() => setShowCreate(true)}
           onNewSession={() => sessions.createSession()}
           onUpdateSession={sessions.updateSession}
@@ -189,8 +193,23 @@ export default function App({ currentUser, onSignOut }: AppProps) {
           speechInputLocale={settingsState.settings.speechInputLocale}
           onDashboard={openDashboard}
           onSettings={() => navigateDashboard("settings")}
+          onProfile={() => navigateDashboard("profile")}
           onSignOut={onSignOut}
           initialTab={workspaceTab}
+        />
+      ) : route.view === "overview" ? (
+        <OverviewDashboard
+          identity={identity}
+          connected={agentsState.connected}
+          agents={agentsState.agents}
+          sessionsByAgent={sessions.sessionsByAgent}
+          totalSessionsByAgent={sessions.totalByAgent}
+          sessionCount={sessions.sessionCount}
+          documentCount={documents.total}
+          scheduleCount={schedules.scheduleCount}
+          onSignOut={onSignOut}
+          onNavigate={navigateDashboard}
+          onSelectAgent={openAgent}
         />
       ) : route.view === "sessions" ? (
         <SessionsDashboard
@@ -198,13 +217,16 @@ export default function App({ currentUser, onSignOut }: AppProps) {
           connected={agentsState.connected}
           agents={agentsState.agents}
           sessionsByAgent={sessions.sessionsByAgent}
+          totalByAgent={sessions.totalByAgent}
           loading={sessions.catalogLoading}
+          loadingMoreAgentId={sessions.loadingMoreAgentId}
           deletingSession={sessions.deletingSession}
           onSignOut={onSignOut}
           onNavigate={navigateDashboard}
           onOpenSession={openSession}
           onNewSession={newSession}
           onDeleteSession={sessions.removeSession}
+          onLoadMoreSessions={sessions.loadMoreSessions}
         />
       ) : route.view === "schedules" ? (
         <SchedulesDashboard
@@ -249,19 +271,29 @@ export default function App({ currentUser, onSignOut }: AppProps) {
           identity={identity}
           connected={agentsState.connected}
           documents={documents.documents}
+          total={documents.total}
           loading={documents.loading}
+          loadingMore={documents.loadingMore}
           uploading={documents.uploading}
           deleting={documents.deleting}
           onSignOut={onSignOut}
           onNavigate={navigateDashboard}
           onUpload={documents.upload}
           onDelete={documents.remove}
+          onLoadMore={documents.loadMore}
         />
       ) : route.view === "tools" ? (
         <ToolRegistryDashboard
           identity={identity}
           connected={agentsState.connected}
           tools={agentsState.tools}
+          onSignOut={onSignOut}
+          onNavigate={navigateDashboard}
+        />
+      ) : route.view === "profile" ? (
+        <ProfileDashboard
+          identity={identity}
+          connected={agentsState.connected}
           onSignOut={onSignOut}
           onNavigate={navigateDashboard}
         />
@@ -321,7 +353,7 @@ function readRoute(): Route {
   const scheduleMatch = window.location.pathname.match(/^\/schedules\/([^/]+)\/?$/);
   if (scheduleMatch) return { view: "schedule-detail", agentSlug: null, scheduleId: decodeURIComponent(scheduleMatch[1]) };
   const view = window.location.pathname.replace(/^\/+|\/+$/g, "");
-  if (view === "sessions" || view === "schedules" || view === "documents" || view === "tools" || view === "settings") {
+  if (view === "overview" || view === "sessions" || view === "schedules" || view === "documents" || view === "tools" || view === "settings" || view === "profile") {
     return { view, agentSlug: null, scheduleId: null };
   }
   return { view: "dashboard", agentSlug: null, scheduleId: null };
