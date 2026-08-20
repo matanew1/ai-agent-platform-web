@@ -153,6 +153,27 @@ test("the sidebar account avatar renders as a circle, not an ellipse", async ({ 
   expect(box!.width).toBeCloseTo(box!.height, 0);
 });
 
+test("collapsing the sidebar keeps sign out, profile, and the avatar circular and reachable", async ({ page }) => {
+  // Regression test: `sidebar-label` (which hides a nav item's text label
+  // once the sidebar is collapsed to its icon rail) was put directly on the
+  // profile-open and sign-out buttons themselves, which have no icon - so
+  // collapsing made both controls vanish entirely, with no way back to
+  // either. Separately, moving the avatar inside the profile-open button
+  // exposed it to `.sidebar-account-open > span`'s flex: 1, stretching it
+  // into an ellipse the same way the test above guards against elsewhere.
+  await page.goto("/agents");
+  await page.getByRole("button", { name: "Collapse sidebar" }).click();
+  await expect(page.locator(".dashboard-sidebar")).toHaveClass(/collapsed/);
+  await expect(page.getByRole("button", { name: "View profile" })).toBeVisible();
+  const signOut = page.getByRole("button", { name: "Sign out" });
+  await expect(signOut).toBeVisible();
+  const avatar = page.locator(".sidebar-account .account-avatar");
+  const box = await avatar.boundingBox();
+  expect(box).not.toBeNull();
+  expect(box!.width).toBeCloseTo(box!.height, 0);
+  await signOut.click();
+});
+
 test("settings persist, support Hebrew RTL, voices, and global accessibility controls", async ({ page }) => {
   await page.goto("/settings");
   await expect(page.getByRole("heading", { name: "Settings" })).toBeVisible();
@@ -165,13 +186,13 @@ test("settings persist, support Hebrew RTL, voices, and global accessibility con
   await expect.poll(() => page.evaluate(() => localStorage.getItem("ai-platform:e2e-user:settings") || "")).toContain('"locale":"he"');
 });
 
-test("workspace drawer, avatars, chat streaming, voice controls, and attachments work together", async ({ page }) => {
+test("workspace sidebar collapse, avatars, chat streaming, voice controls, and attachments work together", async ({ page }) => {
   await page.goto("/agents/cv-expert");
   await expect(page.getByRole("heading", { name: "New conversation" })).toBeVisible();
-  await page.getByRole("button", { name: "Close sidebar" }).click();
-  await expect(page.locator(".workspace")).toHaveClass(/sidebar-closed/);
-  await page.getByRole("button", { name: "Open sidebar" }).click();
-  await expect(page.locator(".workspace")).toHaveClass(/sidebar-open/);
+  await page.getByRole("button", { name: "Collapse sidebar" }).click();
+  await expect(page.locator(".workspace")).toHaveClass(/collapsed/);
+  await page.getByRole("button", { name: "Expand sidebar" }).click();
+  await expect(page.locator(".workspace")).not.toHaveClass(/collapsed/);
   await page.getByPlaceholder("Message CV Expert").fill("Please review my CV");
   await page.getByRole("button", { name: "Send message" }).click();
   await expect(page.getByText("Your CV is ready for review.")).toBeVisible();

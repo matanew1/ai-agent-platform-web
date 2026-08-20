@@ -55,8 +55,8 @@ export function SessionsDashboard({
   const entries = useMemo(() => agents.flatMap((agent, agentIndex) => (
     // Runs a schedule produced are reached through the Schedules
     // dashboard's "View log" link, not this one - keeps manually-started
-    // conversations separate from unattended runs (see WorkspaceSidebar's
-    // identical filter for the per-agent session list).
+    // conversations separate from unattended runs (see WorkspacePage's
+    // identical filter for the "Sessions" inspector tab's per-agent list).
     (sessionsByAgent[agent.id] || [])
       .filter((session) => !isScheduledSessionId(session.id))
       .map((session) => ({ agent, agentIndex, session }))

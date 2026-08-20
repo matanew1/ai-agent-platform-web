@@ -5,6 +5,7 @@ import { DashboardSidebar, type DashboardDestination, type WorkspaceIdentity } f
 import type { Agent } from "../../agents/types";
 import type { Session } from "../../chat/types";
 import { sessionActivityByDay, linePaths, toolUsageCounts } from "../charts";
+import { useSidebarCollapsed } from "../../../shared/hooks/useSidebarCollapsed";
 import { useI18n } from "../../../shared/i18n/I18nProvider";
 
 type OverviewDashboardProps = {
@@ -49,6 +50,7 @@ export function OverviewDashboard({
   onSelectAgent,
 }: OverviewDashboardProps) {
   const { t } = useI18n();
+  const [collapsed, toggleCollapsed] = useSidebarCollapsed();
 
   const activity = useMemo(() => sessionActivityByDay(sessionsByAgent, ACTIVITY_DAYS), [sessionsByAgent]);
   const { line, area } = useMemo(() => linePaths(activity, CHART_WIDTH, CHART_HEIGHT), [activity]);
@@ -66,8 +68,8 @@ export function OverviewDashboard({
   const maxToolCount = Math.max(1, ...topTools.map((entry) => entry.count));
 
   return (
-    <section className="dashboard-layout">
-      <DashboardSidebar identity={identity} connected={connected} onSignOut={onSignOut} activeDestination="overview" onNavigate={onNavigate} />
+    <section className={`dashboard-layout ${collapsed ? "collapsed" : ""}`}>
+      <DashboardSidebar identity={identity} connected={connected} onSignOut={onSignOut} activeDestination="overview" onNavigate={onNavigate} collapsed={collapsed} onToggleCollapsed={toggleCollapsed} />
       <div className="dashboard-main">
         <header className="dashboard-header overview-header">
           <div>

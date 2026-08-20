@@ -9,7 +9,7 @@ export type SpeechInputLocale = "auto" | "en" | "he";
 export type AppSettings = {
   theme: Theme; locale: Locale; compact: boolean; reduceMotion: boolean;
   showSources: boolean; showToolActivity: boolean;
-  highContrast: boolean; autoReadResponses: boolean; sendOnEnter: boolean; sidebarDefaultOpen: boolean;
+  highContrast: boolean; autoReadResponses: boolean; sendOnEnter: boolean;
   englishVoice: string; hebrewVoice: string;
   speechInputLocale: SpeechInputLocale;
 };
@@ -17,7 +17,7 @@ export type AppSettings = {
 const defaults: AppSettings = {
   theme: "dark", locale: "en", compact: false, reduceMotion: false,
   showSources: true, showToolActivity: true,
-  highContrast: false, autoReadResponses: false, sendOnEnter: true, sidebarDefaultOpen: true,
+  highContrast: false, autoReadResponses: false, sendOnEnter: true,
   englishVoice: "preferred", hebrewVoice: "preferred",
   speechInputLocale: "auto",
 };

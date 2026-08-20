@@ -27,17 +27,33 @@ export function Tooltip({ text, label }: TooltipProps) {
   const id = useId();
   const triggerRef = useRef<HTMLButtonElement>(null);
   const [open, setOpen] = useState(false);
-  const [position, setPosition] = useState<{ top: number; left: number } | null>(null);
+  const [position, setPosition] = useState<{ top: number; left: number; width: number } | null>(null);
 
   useLayoutEffect(() => {
     if (!open || !triggerRef.current) return;
-    const rect = triggerRef.current.getBoundingClientRect();
-    const viewportWidth = document.documentElement.clientWidth;
-    const left = Math.min(
-      Math.max(rect.left, VIEWPORT_MARGIN),
-      viewportWidth - BUBBLE_WIDTH - VIEWPORT_MARGIN,
-    );
-    setPosition({ top: rect.bottom + 6, left });
+    const updatePosition = () => {
+      const rect = triggerRef.current?.getBoundingClientRect();
+      if (!rect) return;
+
+      const viewportWidth = document.documentElement.clientWidth;
+      // On narrow viewports, the preferred bubble width may not fit. Calculate
+      // the actual width first, then clamp its left edge using that same value.
+      // This keeps both edges inside the viewport after a resize as well.
+      const width = Math.max(0, Math.min(BUBBLE_WIDTH, viewportWidth - VIEWPORT_MARGIN * 2));
+      const left = Math.max(
+        VIEWPORT_MARGIN,
+        Math.min(rect.left, viewportWidth - width - VIEWPORT_MARGIN),
+      );
+      setPosition({ top: rect.bottom + 6, left, width });
+    };
+
+    updatePosition();
+    window.addEventListener("resize", updatePosition);
+    window.addEventListener("scroll", updatePosition, true);
+    return () => {
+      window.removeEventListener("resize", updatePosition);
+      window.removeEventListener("scroll", updatePosition, true);
+    };
   }, [open]);
 
   return (
@@ -59,7 +75,7 @@ export function Tooltip({ text, label }: TooltipProps) {
         className={`tooltip-bubble ${open && position ? "open" : ""}`}
         role="tooltip"
         id={id}
-        style={position ? { top: position.top, left: position.left, width: BUBBLE_WIDTH } : undefined}
+        style={position ? { top: position.top, left: position.left, width: position.width } : undefined}
       >
         {text}
       </span>

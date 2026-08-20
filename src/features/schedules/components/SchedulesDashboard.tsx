@@ -3,6 +3,7 @@ import { Pencil, Plus, Sparkles, Trash2 } from "lucide-react";
 
 import { DashboardSidebar, type DashboardDestination, type WorkspaceIdentity } from "../../../components/layout/DashboardSidebar";
 import { Avatar } from "../../../shared/ui/Avatar";
+import { useSidebarCollapsed } from "../../../shared/hooks/useSidebarCollapsed";
 import { useI18n } from "../../../shared/i18n/I18nProvider";
 import type { Agent } from "../../agents/types";
 import { describeCron } from "../cronPresets";
@@ -46,6 +47,7 @@ export function SchedulesDashboard({
   onSelectSchedule,
 }: SchedulesDashboardProps) {
   const { t, locale } = useI18n();
+  const [collapsed, toggleCollapsed] = useSidebarCollapsed();
   const [showCreate, setShowCreate] = useState(false);
   const [editing, setEditing] = useState<{ agent: Agent; schedule: Schedule } | null>(null);
   const [toggling, setToggling] = useState<string | null>(null);
@@ -75,13 +77,15 @@ export function SchedulesDashboard({
   };
 
   return (
-    <section className="dashboard-layout">
+    <section className={`dashboard-layout ${collapsed ? "collapsed" : ""}`}>
       <DashboardSidebar
         identity={identity}
         connected={connected}
         activeDestination="schedules"
         onSignOut={onSignOut}
         onNavigate={onNavigate}
+        collapsed={collapsed}
+        onToggleCollapsed={toggleCollapsed}
       />
       <div className="dashboard-main">
         <header className="dashboard-header">

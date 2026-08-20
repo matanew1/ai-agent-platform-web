@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 
+import { useSidebarCollapsed } from "../../shared/hooks/useSidebarCollapsed";
 import { DashboardSidebar, type DashboardDestination, type WorkspaceIdentity } from "./DashboardSidebar";
 
 type ManagementPageProps = {
@@ -25,14 +26,17 @@ export function ManagementPage({
   onSignOut,
   onNavigate,
 }: ManagementPageProps) {
+  const [collapsed, toggleCollapsed] = useSidebarCollapsed();
   return (
-    <section className="dashboard-layout">
+    <section className={`dashboard-layout ${collapsed ? "collapsed" : ""}`}>
       <DashboardSidebar
         identity={identity}
         connected={connected}
         activeDestination={activeDestination}
         onSignOut={onSignOut}
         onNavigate={onNavigate}
+        collapsed={collapsed}
+        onToggleCollapsed={toggleCollapsed}
       />
       <div className="dashboard-main">
         <header className="dashboard-header management-header">
