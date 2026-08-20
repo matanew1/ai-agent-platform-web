@@ -1,4 +1,4 @@
-@import url("https://fonts.googleapis.com/css2?family=Azeret+Mono:wght@400;500;600&family=Instrument+Sans:wdth,wght@75..100,400..700&family=Noto+Sans+Hebrew:wght@400;500;600;700&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&family=Geist+Mono:wght@400;500;600&family=Noto+Sans+Hebrew:wght@400;500;600;700&display=swap");
 
 /* ============================================================
    DESIGN TOKENS
@@ -66,8 +66,8 @@
   --sp-12: 48px;
 
   /* Typography */
-  --font-sans: "Instrument Sans", "Noto Sans Hebrew", sans-serif;
-  --font-mono: "Azeret Mono", "Noto Sans Hebrew", monospace;
+  --font-sans: "Geist", "Noto Sans Hebrew", sans-serif;
+  --font-mono: "Geist Mono", "Noto Sans Hebrew", monospace;
 
   color: var(--text-primary);
   background: var(--bg-base);
@@ -435,7 +435,10 @@ textarea:focus-visible {
 .auth-hero > .brand small { margin-top: 4px; font-size: 15px; }
 
 .brand { display: inline-flex; align-items: center; gap: 14px; color: var(--text-primary); }
-.brand-mark { display: grid; width: 68px; height: 68px; place-items: center; border-radius: 18px; background: linear-gradient(135deg, var(--accent), #8b6dff); color: #fff; box-shadow: 0 10px 28px rgba(77, 126, 255, 0.28); }
+/* aspect-ratio is a hard guarantee on top of the width/height pairs every
+   context below sets explicitly - the mark must never distort into a
+   rectangle, even if a future flex/grid ancestor squeezes one axis. */
+.brand-mark { display: grid; flex-shrink: 0; width: 68px; height: 68px; aspect-ratio: 1 / 1; place-items: center; border-radius: 18px; background: linear-gradient(135deg, var(--accent), #8b6dff); color: #fff; box-shadow: 0 10px 28px rgba(77, 126, 255, 0.28); }
 .brand strong, .brand small { display: block; }
 .brand strong { font-size: 19px; }
 .brand small { margin-top: 2px; color: var(--text-muted); font: 12px var(--font-mono); }
@@ -583,7 +586,10 @@ textarea:focus-visible {
   grid-template-columns: 264px minmax(0, 1fr);
   overflow: hidden;
   background: radial-gradient(ellipse 620px 340px at 80% -10%, rgba(75, 125, 255, 0.1), transparent 72%), var(--bg-base);
+  transition: grid-template-columns 190ms ease;
 }
+
+.dashboard-layout.collapsed { grid-template-columns: 72px minmax(0, 1fr); }
 
 /* ============================================================
    DASHBOARD SIDEBAR
@@ -598,11 +604,68 @@ textarea:focus-visible {
   background: var(--bg-elevated);
 }
 
-.dashboard-sidebar > .brand {
+.dashboard-sidebar .sidebar-header-row {
   margin: 2px var(--sp-2) var(--sp-5);
 }
 
-.dashboard-sidebar > .brand .brand-mark { width: 40px; height: 40px; border-radius: 12px; }
+.dashboard-sidebar .brand .brand-mark { width: 40px; height: 40px; border-radius: 12px; }
+
+/* ============================================================
+   SIDEBAR COLLAPSE (DashboardSidebar is the one sidebar component used on
+   every page that has one, including the agent workspace - so this is the
+   single collapse implementation, not one per page type)
+   ============================================================ */
+.sidebar-header-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 4px;
+}
+
+.sidebar-collapse-toggle {
+  position: relative;
+  z-index: 999;
+  display: grid;
+  width: 26px;
+  height: 26px;
+  flex: 0 0 auto;
+  place-items: center;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--text-muted);
+  transition: background 120ms ease, color 120ms ease;
+}
+
+.sidebar-collapse-toggle:hover {
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--text-primary);
+}
+
+.dashboard-sidebar.collapsed {
+  align-items: center;
+}
+
+.dashboard-sidebar.collapsed .sidebar-header-row {
+  flex-direction: column;
+  gap: var(--sp-2);
+}
+
+.dashboard-sidebar.collapsed .dashboard-nav {
+  width: 100%;
+}
+
+.dashboard-sidebar.collapsed .dashboard-nav button {
+  justify-content: center;
+}
+
+.dashboard-sidebar.collapsed .sidebar-label,
+.dashboard-sidebar.collapsed .brand > span:last-child,
+.dashboard-sidebar.collapsed .dashboard-nav-heading,
+.dashboard-sidebar.collapsed .app-version {
+  display: none;
+}
+
 
 .dashboard-nav {
   display: flex;
@@ -654,6 +717,14 @@ textarea:focus-visible {
   flex: 0 0 16px;
   align-items: center;
   justify-content: center;
+}
+
+.dashboard-nav-group + .dashboard-nav-group {
+  margin-top: var(--sp-3);
+}
+
+.dashboard-nav-heading {
+  padding: 0 10px 6px;
 }
 
 .workspace-connection {
@@ -778,8 +849,6 @@ textarea:focus-visible {
 
 /* Keep the application shell stable; mirror language and control behavior locally. */
 html[dir="rtl"] .dashboard-nav button,
-html[dir="rtl"] .workspace-sidebar-brand,
-html[dir="rtl"] .agent-list button,
 html[dir="rtl"] .session-select,
 html[dir="rtl"] .composer-menu button {
   text-align: right;
@@ -1291,54 +1360,13 @@ html[dir="rtl"] .settings-toggle input { direction: ltr; }
   transition: grid-template-columns 190ms ease;
 }
 
-.workspace.sidebar-closed { grid-template-columns: 0 minmax(440px, 1fr) 340px; }
-.workspace.sidebar-closed .sidebar { visibility: hidden; opacity: 0; transform: translateX(-16px); pointer-events: none; }
-html[dir="rtl"] .workspace.sidebar-closed .sidebar { transform: translateX(16px); }
+.workspace.collapsed { grid-template-columns: 72px minmax(440px, 1fr) 340px; }
 
-.sidebar,
 .inspector {
   min-width: 0;
   min-height: 0;
   background: var(--bg-elevated);
 }
-
-/* ============================================================
-   WORKSPACE SIDEBAR
-   ============================================================ */
-.sidebar {
-  display: grid;
-  grid-template-rows: auto minmax(0, 1fr) auto;
-  height: 100%;
-  min-height: 0;
-  overflow: hidden;
-  padding: var(--sp-4) var(--sp-3);
-  border-right: 1px solid var(--border-strong);
-  transition: opacity 160ms ease, transform 190ms ease, visibility 190ms step-end;
-}
-
-html[dir="rtl"] .sidebar { border-right: 0; border-left: 1px solid var(--border-strong); }
-
-.workspace-sidebar-header {
-  position: relative;
-  z-index: 1;
-  flex: 0 0 auto;
-  background: inherit;
-}
-
-.workspace-sidebar-header { padding-bottom: var(--sp-2); }
-
-.workspace-sidebar-brand {
-  display: block;
-  min-width: 0;
-  margin: 2px var(--sp-2) var(--sp-5);
-  padding: 0;
-  border: 0;
-  background: transparent;
-  color: var(--text-primary);
-  text-align: start;
-}
-
-.workspace-sidebar-brand .brand-mark { width: 40px; height: 40px; border-radius: 12px; }
 
 .icon-button {
   display: grid;
@@ -1361,91 +1389,13 @@ html[dir="rtl"] .sidebar { border-right: 0; border-left: 1px solid var(--border-
   background: var(--accent-hover);
 }
 
-.workspace-sidebar-section-heading {
-  display: flex;
-  flex: 0 0 auto;
-  align-items: center;
-  justify-content: space-between;
-  padding: var(--sp-2) 10px var(--sp-1);
-}
-
-.workspace-sidebar-section-heading .eyebrow {
-  margin: 0;
-}
-
-.workspace-sidebar-center {
-  min-height: 0;
-  overflow-y: auto;
-  overscroll-behavior: contain;
-}
-
 .dashboard-sidebar .sidebar-footer { margin-top: auto; }
 
-.agent-list,
 .session-list {
   display: flex;
   flex-direction: column;
   gap: 2px;
   padding: 0;
-}
-
-.agent-list {
-  flex: 0 0 auto;
-}
-
-.agent-list button {
-  display: flex;
-  width: 100%;
-  align-items: center;
-  gap: 10px;
-  padding: 8px 10px;
-  border: 0;
-  border-radius: var(--radius-sm);
-  background: transparent;
-  color: var(--text-secondary);
-  font-size: 13px;
-  text-align: start;
-  transition: all 100ms ease;
-}
-
-.agent-list button:hover {
-  background: rgba(255, 255, 255, 0.04);
-  color: var(--text-primary);
-}
-
-.agent-list button.active {
-  position: relative;
-  background: var(--accent-subtle);
-  color: var(--text-primary);
-  font-weight: 500;
-}
-
-.agent-list button.active::before {
-  position: absolute;
-  width: 3px;
-  inset-block: 8px;
-  inset-inline-start: 0;
-  border-radius: 0 2px 2px 0;
-  background: var(--accent);
-  content: "";
-}
-
-html[dir="rtl"] .agent-list button.active::before { border-radius: 2px 0 0 2px; }
-
-.agent-list button > span:not(.avatar) {
-  overflow: hidden;
-  flex: 1;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.agent-list button i {
-  width: 5px;
-  height: 5px;
-  flex: 0 0 auto;
-  border-radius: 50%;
-  background: var(--accent);
-  animation: pulse 2s infinite;
 }
 
 .sessions-head {
@@ -1560,21 +1510,6 @@ html[dir="rtl"] .agent-list button.active::before { border-radius: 2px 0 0 2px; 
   min-width: 0;
   flex: 1;
 }
-
-.sidebar-toggle {
-  display: grid;
-  width: 30px;
-  height: 30px;
-  flex: 0 0 auto;
-  padding: 0;
-  place-items: center;
-  border: 1px solid var(--border-default);
-  border-radius: 4px;
-  background: var(--bg-surface);
-  color: var(--text-secondary);
-}
-
-.sidebar-toggle:hover { border-color: var(--accent); color: var(--accent); }
 
 .chat-head h2 {
   overflow: hidden;
@@ -2423,7 +2358,7 @@ html[dir="rtl"] pre {
   min-width: 0;
 }
 
-.temperature-control span {
+.temperature-control > span {
   color: var(--text-secondary);
   font: 11px var(--font-mono);
   white-space: nowrap;
@@ -2992,49 +2927,6 @@ html[dir="rtl"] pre {
   flex-direction: column;
   gap: var(--sp-4);
 }
-
-/* ============================================================
-   TRACES PANEL
-   ============================================================ */
-.traces-panel { gap: 8px; }
-
-.trace-empty {
-  padding: 40px var(--sp-3) var(--sp-4);
-  color: var(--text-muted);
-  text-align: center;
-}
-
-.trace-empty > span { color: var(--accent); font-size: 24px; }
-
-.trace-empty h3 {
-  margin: var(--sp-3) 0 var(--sp-2);
-  color: var(--text-primary);
-  font-size: 13px;
-  font-weight: 600;
-}
-
-.trace-empty p { margin: 0; font-size: 12px; line-height: 1.5; }
-
-.trace-row {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 10px 12px;
-  border: 1px solid var(--border-subtle);
-  border-radius: var(--radius-sm);
-  background: var(--bg-input);
-}
-
-.trace-row i {
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-  background: var(--success);
-}
-
-.trace-row strong, .trace-row span { display: block; }
-.trace-row strong { font-size: 11.5px; }
-.trace-row span { margin-top: 2px; color: var(--text-muted); font: 10px var(--font-mono); }
 
 /* ============================================================
    MODAL
@@ -3714,8 +3606,7 @@ button.management-row:hover { background: var(--bg-surface-hover); }
     var(--bg-base);
 }
 
-.dashboard-sidebar,
-.sidebar {
+.dashboard-sidebar {
   background:
     linear-gradient(180deg, rgba(79, 197, 178, 0.055), transparent 140px),
     var(--bg-elevated);
@@ -3899,27 +3790,12 @@ html[dir="rtl"] .inspector { border-right-color: var(--border-strong); }
   .workspace-onboarding-steps { grid-column: 1 / -1; }
   .workspace-onboarding > .primary { grid-row: auto; grid-column: 1 / -1; }
   .settings-grid { column-count: 1; }
-  .dashboard-layout { grid-template-columns: 1fr; }
+  .dashboard-layout,
+  .dashboard-layout.collapsed { grid-template-columns: 1fr; }
   .dashboard-sidebar { display: none; }
   .workspace,
-  .workspace.sidebar-open,
-  .workspace.sidebar-closed { grid-template-columns: 1fr; }
-  .sidebar, .inspector { display: none; }
-  .workspace.sidebar-open .sidebar {
-    position: fixed;
-    z-index: 40;
-    display: flex;
-    width: min(310px, calc(100vw - 48px));
-    inset-block: 0;
-    inset-inline-start: 0;
-    visibility: visible;
-    border-right: 1px solid var(--border-strong);
-    background: var(--bg-elevated);
-    box-shadow: var(--shadow-xl);
-    opacity: 1;
-    pointer-events: auto;
-    transform: none;
-  }
+  .workspace.collapsed { grid-template-columns: 1fr; }
+  .inspector { display: none; }
   .dashboard-header { flex-direction: column; align-items: flex-start; }
   .dashboard-actions { width: 100%; }
   .dashboard-actions input, .management-actions input { width: 100%; }
@@ -3934,7 +3810,7 @@ html[dir="rtl"] .inspector { border-right-color: var(--border-strong); }
 
 @media print {
   body { overflow: visible; }
-  .sidebar, .inspector, .composer, .chat-actions, .notice { display: none !important; }
+  .dashboard-sidebar, .inspector, .composer, .chat-actions, .notice { display: none !important; }
   .workspace { display: block; height: auto; }
   .chat-pane { height: auto; }
   .messages { overflow: visible; }

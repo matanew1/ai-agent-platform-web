@@ -4,6 +4,7 @@ import { DashboardSidebar, type DashboardDestination, type WorkspaceIdentity } f
 import { AssistantMessageContent } from "../../chat/components/AssistantMessageContent";
 import type { Session } from "../../chat/types";
 import { Avatar } from "../../../shared/ui/Avatar";
+import { useSidebarCollapsed } from "../../../shared/hooks/useSidebarCollapsed";
 import { useI18n } from "../../../shared/i18n/I18nProvider";
 import type { Agent } from "../../agents/types";
 import { describeCron } from "../cronPresets";
@@ -54,6 +55,7 @@ export function ScheduleHistoryPage({
   onDelete,
 }: ScheduleHistoryPageProps) {
   const { t, locale } = useI18n();
+  const [collapsed, toggleCollapsed] = useSidebarCollapsed();
 
   const requestDelete = () => {
     if (!agent || !schedule) return;
@@ -63,13 +65,15 @@ export function ScheduleHistoryPage({
   };
 
   return (
-    <section className="dashboard-layout">
+    <section className={`dashboard-layout ${collapsed ? "collapsed" : ""}`}>
       <DashboardSidebar
         identity={identity}
         connected={connected}
         activeDestination="schedules"
         onSignOut={onSignOut}
         onNavigate={onNavigate}
+        collapsed={collapsed}
+        onToggleCollapsed={toggleCollapsed}
       />
       <div className="dashboard-main schedule-history-page">
         <header className="dashboard-header">

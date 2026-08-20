@@ -4,6 +4,7 @@ import { FileUp, Plus, Sparkles, Trash2, Wrench } from "lucide-react";
 import { DashboardSidebar, type DashboardDestination, type WorkspaceIdentity } from "../../../components/layout/DashboardSidebar";
 import { DEFAULT_MODEL, DEFAULT_TEMPERATURE } from "../../../shared/config/constants";
 import { Avatar } from "../../../shared/ui/Avatar";
+import { useSidebarCollapsed } from "../../../shared/hooks/useSidebarCollapsed";
 import { useI18n } from "../../../shared/i18n/I18nProvider";
 import type { Agent } from "../types";
 
@@ -23,19 +24,22 @@ type DashboardProps = {
 export function Dashboard({ identity, connected, agents, stats, sessionCounts, onSignOut, onCreate, onSelect, onDelete, onNavigate }: DashboardProps) {
   const { t } = useI18n();
   const [query, setQuery] = useState("");
+  const [collapsed, toggleCollapsed] = useSidebarCollapsed();
   const visibleAgents = useMemo(() => {
     const normalized = query.trim().toLowerCase();
     return normalized ? agents.filter((agent) => agent.name.toLowerCase().includes(normalized)) : agents;
   }, [agents, query]);
 
   return (
-    <section className="dashboard-layout">
+    <section className={`dashboard-layout ${collapsed ? "collapsed" : ""}`}>
       <DashboardSidebar
         identity={identity}
         connected={connected}
         onSignOut={onSignOut}
         activeDestination="agents"
         onNavigate={onNavigate}
+        collapsed={collapsed}
+        onToggleCollapsed={toggleCollapsed}
       />
       <div className="dashboard-main">
         <header className="dashboard-header">

@@ -18,17 +18,17 @@ export function SidebarFooter({ identity, settingsLabel, signOutLabel, profileLa
   return (
     <footer className="sidebar-footer">
       <div className="sidebar-bottom-nav">
-        <button className={`sidebar-settings ${settingsActive ? "active" : ""}`} type="button" aria-current={settingsActive ? "page" : undefined} onClick={onSettings}>
+        <button className={`sidebar-settings ${settingsActive ? "active" : ""}`} type="button" aria-current={settingsActive ? "page" : undefined} title={settingsLabel} onClick={onSettings}>
           <Settings size={15} />
-          {settingsLabel}
+          <span className="sidebar-label">{settingsLabel}</span>
         </button>
       </div>
       <div className="sidebar-account">
         <AccountAvatar name={identity.displayName} avatarUrl={identity.avatarUrl} />
-        <button type="button" className="sidebar-account-open" onClick={onProfile} aria-label={profileLabel}>
+        <button type="button" className="sidebar-account-open sidebar-label" onClick={onProfile} aria-label={profileLabel}>
           <span><strong>{identity.displayName}</strong><small>{identity.email}</small></span>
         </button>
-        {onSignOut && <button type="button" onClick={onSignOut}>{signOutLabel}</button>}
+        {onSignOut && <button type="button" className="sidebar-label" onClick={onSignOut}>{signOutLabel}</button>}
       </div>
     </footer>
   );

@@ -165,13 +165,13 @@ test("settings persist, support Hebrew RTL, voices, and global accessibility con
   await expect.poll(() => page.evaluate(() => localStorage.getItem("ai-platform:e2e-user:settings") || "")).toContain('"locale":"he"');
 });
 
-test("workspace drawer, avatars, chat streaming, voice controls, and attachments work together", async ({ page }) => {
+test("workspace sidebar collapse, avatars, chat streaming, voice controls, and attachments work together", async ({ page }) => {
   await page.goto("/agents/cv-expert");
   await expect(page.getByRole("heading", { name: "New conversation" })).toBeVisible();
-  await page.getByRole("button", { name: "Close sidebar" }).click();
-  await expect(page.locator(".workspace")).toHaveClass(/sidebar-closed/);
-  await page.getByRole("button", { name: "Open sidebar" }).click();
-  await expect(page.locator(".workspace")).toHaveClass(/sidebar-open/);
+  await page.getByRole("button", { name: "Collapse sidebar" }).click();
+  await expect(page.locator(".workspace")).toHaveClass(/collapsed/);
+  await page.getByRole("button", { name: "Expand sidebar" }).click();
+  await expect(page.locator(".workspace")).not.toHaveClass(/collapsed/);
   await page.getByPlaceholder("Message CV Expert").fill("Please review my CV");
   await page.getByRole("button", { name: "Send message" }).click();
   await expect(page.getByText("Your CV is ready for review.")).toBeVisible();

@@ -27,7 +27,7 @@ import { useAppSettings } from "../shared/hooks/useAppSettings";
 import { I18nProvider } from "../shared/i18n/I18nProvider";
 
 type View = "overview" | "dashboard" | "workspace" | "sessions" | "schedules" | "schedule-detail" | "documents" | "tools" | "settings" | "profile";
-type InspectorTab = "config" | "documents" | "traces";
+type InspectorTab = "sessions" | "config" | "documents";
 
 type Route = { view: View; agentSlug: string | null; scheduleId: string | null };
 
@@ -157,6 +157,7 @@ export default function App({ currentUser, onSignOut }: AppProps) {
       ) : route.view === "workspace" && agentsState.selectedAgent ? (
         <WorkspacePage
           identity={identity}
+          connected={agentsState.connected}
           agents={agentsState.agents}
           agent={agentsState.selectedAgent}
           tools={agentsState.tools}
@@ -174,7 +175,6 @@ export default function App({ currentUser, onSignOut }: AppProps) {
           onSelectSession={sessions.selectSession}
           onDeleteSession={(sessionId) => sessions.removeSession(agentsState.selectedAgent!.id, sessionId)}
           onClearSession={(sessionId) => sessions.clearSession(agentsState.selectedAgent!.id, sessionId)}
-          onCreateAgent={() => setShowCreate(true)}
           onNewSession={() => sessions.createSession()}
           onUpdateSession={sessions.updateSession}
           onSaveAgent={agentsState.updateAgent}
@@ -191,7 +191,7 @@ export default function App({ currentUser, onSignOut }: AppProps) {
           englishVoice={settingsState.settings.englishVoice}
           hebrewVoice={settingsState.settings.hebrewVoice}
           speechInputLocale={settingsState.settings.speechInputLocale}
-          onDashboard={openDashboard}
+          onNavigate={navigateDashboard}
           onSettings={() => navigateDashboard("settings")}
           onProfile={() => navigateDashboard("profile")}
           onSignOut={onSignOut}

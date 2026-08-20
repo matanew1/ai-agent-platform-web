@@ -1,5 +1,5 @@
 import { FormEvent, RefObject, useEffect, useRef, useState } from "react";
-import { ArrowUp, Bot, Check, Copy, Eraser, Mic, MicOff, PanelLeftClose, PanelLeftOpen, Paperclip, Plus, Printer, Sparkles, Square, SquarePen, Volume2, VolumeX } from "lucide-react";
+import { ArrowUp, Bot, Check, Copy, Eraser, Mic, MicOff, Paperclip, Plus, Printer, Sparkles, Square, SquarePen, Volume2, VolumeX } from "lucide-react";
 
 import { DEFAULT_MODEL } from "../../../shared/config/constants";
 import { Avatar } from "../../../shared/ui/Avatar";
@@ -34,7 +34,6 @@ type ChatPaneProps = {
   agent: { id: string; name: string; model?: string | null };
   userName: string;
   userAvatarUrl?: string | null;
-  sidebarOpen: boolean;
   autoReadResponses: boolean;
   sendOnEnter: boolean;
   englishVoice: string;
@@ -51,7 +50,6 @@ type ChatPaneProps = {
   onStop: () => void;
   onNewSession: () => void;
   onClearSession: () => void;
-  onToggleSidebar: () => void;
   onError?: (message: string | null) => void;
   showSources: boolean;
   showToolActivity: boolean;
@@ -59,7 +57,7 @@ type ChatPaneProps = {
 
 export function ChatPane(props: ChatPaneProps) {
   const { t, locale } = useI18n();
-  const { agent, userName, userAvatarUrl, session, draft, files, streaming, uploadRef, onDraft, onFiles, onSubmit, onStop, onNewSession, onClearSession, onToggleSidebar, onError, sidebarOpen, autoReadResponses, sendOnEnter, englishVoice, hebrewVoice, speechInputLocale, showSources, showToolActivity } = props;
+  const { agent, userName, userAvatarUrl, session, draft, files, streaming, uploadRef, onDraft, onFiles, onSubmit, onStop, onNewSession, onClearSession, onError, autoReadResponses, sendOnEnter, englishVoice, hebrewVoice, speechInputLocale, showSources, showToolActivity } = props;
   const [enhancing, setEnhancing] = useState(false);
 
   async function enhanceDraft() {
@@ -217,9 +215,6 @@ export function ChatPane(props: ChatPaneProps) {
   return (
     <section className="chat-pane">
       <header className="chat-head">
-        <button className="sidebar-toggle" type="button" aria-label={sidebarOpen ? t("closeSidebar") : t("openSidebar")} aria-expanded={sidebarOpen} onClick={onToggleSidebar}>
-          {sidebarOpen ? <PanelLeftClose size={17} /> : <PanelLeftOpen size={17} />}
-        </button>
         <div className="chat-title"><h2>{session?.title || t("newSession")}</h2><p>{agent.name} · {session?.id.slice(0, 6) || t("new")} · {agent.model || DEFAULT_MODEL}</p></div>
         <div className="chat-actions">
           <button className="secondary" type="button" onClick={() => window.print()}><Printer size={14} /> {t("export")}</button>

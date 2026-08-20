@@ -1,23 +1,27 @@
 import { ChangeEvent, useEffect, useRef, useState } from "react";
-import { Activity } from "lucide-react";
+import { Trash2 } from "lucide-react";
 
-import { WorkspaceSidebar } from "../../components/layout/WorkspaceSidebar";
-import type { WorkspaceIdentity } from "../../components/layout/DashboardSidebar";
+import { DashboardSidebar, type DashboardDestination, type WorkspaceIdentity } from "../../components/layout/DashboardSidebar";
 import { AgentConfigPanel } from "../../features/agents/components/AgentConfigPanel";
 import type { Agent, AgentChanges, Tool } from "../../features/agents/types";
 import { ChatPane } from "../../features/chat/components/ChatPane";
 import { useStreamingChat } from "../../features/chat/hooks/useStreamingChat";
 import type { Session } from "../../features/chat/types";
 import type { IndexedChatDocument } from "../../features/chat/types";
+import { isScheduledSessionId } from "../../features/schedules/types";
 import { DocumentsPanel } from "../../features/documents/components/DocumentsPanel";
 import type { IndexedDocument } from "../../features/documents/types";
 import type { ModelCatalog } from "../../features/models/types";
 import type { AppSettings } from "../../shared/hooks/useAppSettings";
+import { useSidebarCollapsed } from "../../shared/hooks/useSidebarCollapsed";
 import { useI18n } from "../../shared/i18n/I18nProvider";
 
+type InspectorTab = "sessions" | "config" | "documents";
+
 type WorkspacePageProps = {
-  initialTab: "config" | "documents" | "traces";
+  initialTab: InspectorTab;
   identity: WorkspaceIdentity;
+  connected: boolean;
   agents: Agent[];
   agent: Agent;
   tools: Tool[];
@@ -35,7 +39,6 @@ type WorkspacePageProps = {
   onSelectSession: (sessionId: string) => void;
   onDeleteSession: (sessionId: string) => Promise<void>;
   onClearSession: (sessionId: string) => Promise<void>;
-  onCreateAgent: () => void;
   onNewSession: () => void;
   onUpdateSession: (agentId: string, sessionId: string, updater: (session: Session) => Session) => void;
   onSaveAgent: (agentId: string, changes: AgentChanges) => Promise<unknown>;
@@ -52,7 +55,7 @@ type WorkspacePageProps = {
   englishVoice: AppSettings["englishVoice"];
   hebrewVoice: AppSettings["hebrewVoice"];
   speechInputLocale: AppSettings["speechInputLocale"];
-  onDashboard: () => void;
+  onNavigate: (destination: DashboardDestination) => void;
   onSettings: () => void;
   onProfile: () => void;
   onSignOut?: () => void;
@@ -60,8 +63,8 @@ type WorkspacePageProps = {
 
 export function WorkspacePage(props: WorkspacePageProps) {
   const { t } = useI18n();
-  const [tab, setTab] = useState<"config" | "documents" | "traces">(props.initialTab);
-  const [sidebarOpen, setSidebarOpen] = useState(() => typeof window === "undefined" || (window.innerWidth > 768 && props.sidebarDefaultOpen));
+  const [tab, setTab] = useState<InspectorTab>(props.initialTab);
+  const [collapsed, toggleCollapsed] = useSidebarCollapsed();
   const [saving, setSaving] = useState(false);
   const attachmentRef = useRef<HTMLInputElement>(null);
   const documentRef = useRef<HTMLInputElement>(null);
@@ -114,28 +117,20 @@ export function WorkspacePage(props: WorkspacePageProps) {
   };
 
   return (
-    <section className={`workspace ${sidebarOpen ? "sidebar-open" : "sidebar-closed"}`}>
-      <WorkspaceSidebar
+    <section className={`workspace ${collapsed ? "collapsed" : ""}`}>
+      <DashboardSidebar
         identity={props.identity}
-        agents={props.agents}
-        selectedAgentId={props.agent.id}
-        sessions={props.sessions}
-        selectedSessionId={props.selectedSessionId}
-        deletingSessionId={props.deletingSessionId}
-        onSelectAgent={props.onSelectAgent}
-        onSelectSession={props.onSelectSession}
-        onDeleteSession={deleteSession}
-        onCreateAgent={props.onCreateAgent}
-        onDashboard={props.onDashboard}
-        onSettings={props.onSettings}
-        onProfile={props.onProfile}
+        connected={props.connected}
+        activeDestination="agents"
+        onNavigate={props.onNavigate}
         onSignOut={props.onSignOut}
+        collapsed={collapsed}
+        onToggleCollapsed={toggleCollapsed}
       />
       <ChatPane
         agent={props.agent}
         userName={props.identity.displayName}
         userAvatarUrl={props.identity.avatarUrl}
-        sidebarOpen={sidebarOpen}
         autoReadResponses={props.autoReadResponses}
         sendOnEnter={props.sendOnEnter}
         englishVoice={props.englishVoice}
@@ -153,16 +148,46 @@ export function WorkspacePage(props: WorkspacePageProps) {
         onNewSession={props.onNewSession}
         onClearSession={() => { if (props.currentSession) void props.onClearSession(props.currentSession.id); }}
         onError={props.onError}
-        onToggleSidebar={() => setSidebarOpen((open) => !open)}
         showSources={props.showSources}
         showToolActivity={props.showToolActivity}
       />
       <aside className="inspector">
         <nav className="inspector-tabs" role="tablist" aria-label={t("configuration")}>
+          <button id="sessions-tab" role="tab" aria-selected={tab === "sessions"} aria-controls="sessions-panel" className={tab === "sessions" ? "active" : ""} onClick={() => setTab("sessions")}>{t("sessions")}</button>
           <button id="config-tab" role="tab" aria-selected={tab === "config"} aria-controls="config-panel" className={tab === "config" ? "active" : ""} onClick={() => setTab("config")}>{t("configuration")}</button>
           <button id="documents-tab" role="tab" aria-selected={tab === "documents"} aria-controls="documents-panel" className={tab === "documents" ? "active" : ""} onClick={() => setTab("documents")}>{t("documents")}</button>
-          <button id="traces-tab" role="tab" aria-selected={tab === "traces"} aria-controls="traces-panel" className={tab === "traces" ? "active" : ""} onClick={() => setTab("traces")}>{t("traces")}</button>
         </nav>
+        {tab === "sessions" && (
+          <div className="inspector-panel" id="sessions-panel" role="tabpanel" aria-labelledby="sessions-tab">
+            <div className="inspector-content">
+              <p className="inspector-kicker">{t("sessions")} · {props.agent.name}</p>
+              <nav className="session-list">
+                {/* Sessions produced by a fired schedule are reached through the
+                   Schedules dashboard's "View log" link, not this list - keeps
+                   manually-started conversations and unattended runs visually
+                   separate rather than mixed together with just a badge. */}
+                {props.sessions.filter((session) => !isScheduledSessionId(session.id)).map((session) => (
+                  <div className={`session-item ${session.id === props.selectedSessionId ? "active" : ""}`} key={session.id}>
+                    <button className="session-select" onClick={() => props.onSelectSession(session.id)}>
+                      <strong>{session.title}</strong>
+                      <span>{session.messages.length} messages · {formatSessionDate(session.updatedAt)}</span>
+                    </button>
+                    <button
+                      aria-label={`Delete ${session.title}`}
+                      className="session-delete"
+                      disabled={props.deletingSessionId === session.id}
+                      onClick={() => deleteSession(session.id)}
+                      title={t("deleteSession")}
+                      type="button"
+                    >
+                      <Trash2 size={14} />
+                    </button>
+                  </div>
+                ))}
+              </nav>
+            </div>
+          </div>
+        )}
         {tab === "config" && (
           <div className="inspector-panel" id="config-panel" role="tabpanel" aria-labelledby="config-tab">
             <AgentConfigPanel
@@ -190,26 +215,14 @@ export function WorkspacePage(props: WorkspacePageProps) {
             />
           </div>
         )}
-        {tab === "traces" && <div className="inspector-panel" id="traces-panel" role="tabpanel" aria-labelledby="traces-tab"><TracesPanel session={props.currentSession} /></div>}
       </aside>
     </section>
   );
 }
 
-function TracesPanel({ session }: { session: Session | null }) {
-  const { t } = useI18n();
-  const assistantMessages = session?.messages.filter((message) => message.role === "assistant") || [];
-  return (
-    <div className="inspector-content traces-panel">
-      <p className="inspector-kicker">{t("currentSession")}</p>
-      {assistantMessages.length === 0 ? (
-        <div className="trace-empty"><span><Activity size={24} /></span><h3>{t("noTraces")}</h3><p>{t("traceHint")}</p></div>
-      ) : assistantMessages.map((message, index) => (
-        <div className="trace-row" key={message.id}>
-          <i />
-          <div><strong>{t("assistantTurn", { number: String(index + 1) })}</strong><span>{message.meta?.tools.length || 0} {t("tools")} · {message.meta?.chunks || 0} {t("chunks")}</span></div>
-        </div>
-      ))}
-    </div>
-  );
+function formatSessionDate(updatedAt: number) {
+  const elapsed = Date.now() - updatedAt;
+  if (elapsed < 60_000) return "now";
+  if (elapsed < 86_400_000) return "today";
+  return new Date(updatedAt).toLocaleDateString(undefined, { month: "short", day: "numeric" });
 }
