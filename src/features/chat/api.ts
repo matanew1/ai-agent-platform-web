@@ -1,4 +1,5 @@
 import { apiRequest, apiStream } from "../../shared/api/client";
+import { DEFAULT_PAGE_LIMIT, type Page } from "../../shared/api/pagination";
 import type { ArtifactReference, ChatAttachment, ChatMetadata, IndexedChatDocument, RetrievedSource, StoredSession } from "./types";
 
 type StreamChatInput = {
@@ -97,9 +98,13 @@ export async function streamChat(input: StreamChatInput): Promise<ChatMetadata> 
   };
 }
 
-export function listSessions(agentId: string, signal?: AbortSignal) {
-  return apiRequest<StoredSession[]>(
-    `/agents/${agentId}/sessions`,
+export function listSessions(
+  agentId: string,
+  { limit = DEFAULT_PAGE_LIMIT, offset = 0 }: { limit?: number; offset?: number } = {},
+  signal?: AbortSignal,
+) {
+  return apiRequest<Page<StoredSession>>(
+    `/agents/${agentId}/sessions?limit=${limit}&offset=${offset}`,
     { signal },
   );
 }
@@ -108,5 +113,18 @@ export function deleteSession(agentId: string, sessionId: string) {
   return apiRequest<void>(
     `/agents/${agentId}/sessions/${encodeURIComponent(sessionId)}`,
     { method: "DELETE" },
+  );
+}
+
+/** Rewrites a draft message using the agent's own system prompt/tools - a single
+ * non-streamed call, nothing persisted (see agent.controller.rewrite_draft). */
+export function rewriteDraft(agentId: string, message: string) {
+  return apiRequest<{ message: string }>(
+    `/agents/${agentId}/draft/rewrite`,
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ message }),
+    },
   );
 }

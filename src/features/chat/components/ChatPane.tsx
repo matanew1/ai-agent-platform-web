@@ -1,9 +1,11 @@
 import { FormEvent, RefObject, useEffect, useRef, useState } from "react";
-import { ArrowUp, Bot, Check, Copy, Mic, MicOff, PanelLeftClose, PanelLeftOpen, Paperclip, Plus, Printer, Square, SquarePen, Volume2, VolumeX } from "lucide-react";
+import { ArrowUp, Bot, Check, Copy, Eraser, Mic, MicOff, PanelLeftClose, PanelLeftOpen, Paperclip, Plus, Printer, Sparkles, Square, SquarePen, Volume2, VolumeX } from "lucide-react";
 
 import { DEFAULT_MODEL } from "../../../shared/config/constants";
 import { Avatar } from "../../../shared/ui/Avatar";
-import { accountAvatarChangedEvent, accountAvatarSrc, currentAccountAvatar } from "../../../shared/ui/AccountAvatar";
+import { AccountAvatar } from "../../../shared/ui/AccountAvatar";
+import { getErrorMessage } from "../../../shared/lib/errors";
+import { rewriteDraft } from "../api";
 import type { Session } from "../types";
 import { AssistantMessageContent } from "./AssistantMessageContent";
 import { useI18n } from "../../../shared/i18n/I18nProvider";
@@ -29,8 +31,9 @@ function joinDictation(existing: string, dictated: string) {
 }
 
 type ChatPaneProps = {
-  agent: { name: string; model?: string | null };
-  userId: string;
+  agent: { id: string; name: string; model?: string | null };
+  userName: string;
+  userAvatarUrl?: string | null;
   sidebarOpen: boolean;
   autoReadResponses: boolean;
   sendOnEnter: boolean;
@@ -47,19 +50,35 @@ type ChatPaneProps = {
   onSubmit: (event: FormEvent) => void;
   onStop: () => void;
   onNewSession: () => void;
+  onClearSession: () => void;
   onToggleSidebar: () => void;
+  onError?: (message: string | null) => void;
   showSources: boolean;
   showToolActivity: boolean;
 };
 
 export function ChatPane(props: ChatPaneProps) {
   const { t, locale } = useI18n();
-  const { agent, userId, session, draft, files, streaming, uploadRef, onDraft, onFiles, onSubmit, onStop, onNewSession, onToggleSidebar, sidebarOpen, autoReadResponses, sendOnEnter, englishVoice, hebrewVoice, speechInputLocale, showSources, showToolActivity } = props;
+  const { agent, userName, userAvatarUrl, session, draft, files, streaming, uploadRef, onDraft, onFiles, onSubmit, onStop, onNewSession, onClearSession, onToggleSidebar, onError, sidebarOpen, autoReadResponses, sendOnEnter, englishVoice, hebrewVoice, speechInputLocale, showSources, showToolActivity } = props;
+  const [enhancing, setEnhancing] = useState(false);
+
+  async function enhanceDraft() {
+    if (!draft.trim() || enhancing) return;
+    setEnhancing(true);
+    onError?.(null);
+    try {
+      const result = await rewriteDraft(agent.id, draft);
+      onDraft(result.message);
+    } catch (reason) {
+      onError?.(getErrorMessage(reason, "Could not enhance the message."));
+    } finally {
+      setEnhancing(false);
+    }
+  }
   const messagesRef = useRef<HTMLDivElement>(null);
   const [actionsOpen, setActionsOpen] = useState(false);
   const [copiedMessageId, setCopiedMessageId] = useState<string | null>(null);
   const [speakingMessageId, setSpeakingMessageId] = useState<string | null>(null);
-  const [userAvatar, setUserAvatar] = useState(() => currentAccountAvatar(userId));
   const [listening, setListening] = useState(false);
   const recognitionRef = useRef<SpeechRecognitionLike | null>(null);
   const keepListeningRef = useRef(false);
@@ -96,16 +115,6 @@ export function ChatPane(props: ChatPaneProps) {
     recognitionRef.current?.stop();
   }, []);
   useEffect(() => () => window.speechSynthesis?.cancel(), []);
-
-  useEffect(() => {
-    setUserAvatar(currentAccountAvatar(userId));
-    const onAvatarChange = (event: Event) => {
-      const detail = (event as CustomEvent<{ userId: string; avatar: typeof userAvatar }>).detail;
-      if (detail.userId === userId) setUserAvatar(detail.avatar);
-    };
-    window.addEventListener(accountAvatarChangedEvent, onAvatarChange);
-    return () => window.removeEventListener(accountAvatarChangedEvent, onAvatarChange);
-  }, [userId]);
 
   const voiceSupported = typeof window !== "undefined" && Boolean(speechRecognitionConstructor());
   const toggleVoiceInput = () => {
@@ -214,6 +223,15 @@ export function ChatPane(props: ChatPaneProps) {
         <div className="chat-title"><h2>{session?.title || t("newSession")}</h2><p>{agent.name} · {session?.id.slice(0, 6) || t("new")} · {agent.model || DEFAULT_MODEL}</p></div>
         <div className="chat-actions">
           <button className="secondary" type="button" onClick={() => window.print()}><Printer size={14} /> {t("export")}</button>
+          {!!session?.messages.length && (
+            <button
+              className="secondary"
+              type="button"
+              onClick={() => { if (window.confirm(t("clearSessionConfirm"))) onClearSession(); }}
+            >
+              <Eraser size={14} /> {t("clearSession")}
+            </button>
+          )}
           <button className="secondary" type="button" onClick={onNewSession}><SquarePen size={14} /> {t("newSession")}</button>
         </div>
       </header>
@@ -297,7 +315,7 @@ export function ChatPane(props: ChatPaneProps) {
                 </div>
               )}
             </div>
-            {message.role === "user" && <img className="message-avatar message-avatar-user" src={accountAvatarSrc(userAvatar)} alt="" />}
+            {message.role === "user" && <span className="message-avatar message-avatar-user"><AccountAvatar name={userName} avatarUrl={userAvatarUrl} /></span>}
           </article>
         ))}
       </div>
@@ -361,6 +379,16 @@ export function ChatPane(props: ChatPaneProps) {
               }}
             />
             <div className="composer-actions">
+              <button
+                className="enhance-draft"
+                type="button"
+                disabled={!draft.trim() || enhancing}
+                aria-label={enhancing ? t("enhancingPrompt") : t("enhancePrompt")}
+                title={enhancing ? t("enhancingPrompt") : t("enhancePrompt")}
+                onClick={() => void enhanceDraft()}
+              >
+                <Sparkles size={16} className={enhancing ? "spin" : ""} />
+              </button>
               <button
                 className={`voice-input ${listening ? "listening" : ""}`}
                 disabled={!voiceSupported}

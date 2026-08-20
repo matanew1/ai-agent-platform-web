@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
+import { DEFAULT_PAGE_LIMIT } from "../../../shared/api/pagination";
 import { getErrorMessage } from "../../../shared/lib/errors";
 import { newId, sessionTitle } from "../../../shared/lib/format";
 import { deleteSession, listSessions } from "../api";
@@ -12,15 +13,18 @@ export function useChatSessions(
   prefetchAgentIds: string[] = [],
 ) {
   const [sessionsByAgent, setSessionsByAgent] = useState<Record<string, Session[]>>({});
+  const [totalByAgent, setTotalByAgent] = useState<Record<string, number>>({});
   const [selectedSessionByAgent, setSelectedSessionByAgent] = useState<Record<string, string>>({});
   const [loadedScopes, setLoadedScopes] = useState<Record<string, boolean>>({});
   const [deletingSession, setDeletingSession] = useState<string | null>(null);
+  const [loadingMoreAgentId, setLoadingMoreAgentId] = useState<string | null>(null);
   const renderedUser = useRef(userId);
   const userChanged = renderedUser.current !== userId;
 
   useEffect(() => {
     renderedUser.current = userId;
     setSessionsByAgent({});
+    setTotalByAgent({});
     setSelectedSessionByAgent({});
     setLoadedScopes({});
     setDeletingSession(null);
@@ -43,6 +47,7 @@ export function useChatSessions(
       ...current,
       [agentId]: [session, ...(current[agentId] || [])],
     }));
+    setTotalByAgent((current) => ({ ...current, [agentId]: (current[agentId] ?? 0) + 1 }));
     setSelectedSessionByAgent((current) => ({ ...current, [agentId]: session.id }));
     return session;
   }, [selectedAgentId]);
@@ -52,14 +57,15 @@ export function useChatSessions(
     const scope = `${userId}\0${selectedAgentId}`;
     if (loadedScopes[scope]) return;
     const controller = new AbortController();
-    void listSessions(selectedAgentId, controller.signal)
-      .then((storedSessions) => {
+    void listSessions(selectedAgentId, { limit: DEFAULT_PAGE_LIMIT, offset: 0 }, controller.signal)
+      .then((page) => {
         if (controller.signal.aborted) return;
-        const remoteSessions = storedSessions.map(fromStoredSession);
+        const remoteSessions = page.items.map(fromStoredSession);
         setSessionsByAgent((current) => ({
           ...current,
           [selectedAgentId]: mergeSessions(current[selectedAgentId] || [], remoteSessions),
         }));
+        setTotalByAgent((current) => ({ ...current, [selectedAgentId]: page.total }));
       })
       .catch((reason) => {
         if (!controller.signal.aborted) onError?.(getErrorMessage(reason, "Could not load session history."));
@@ -77,7 +83,7 @@ export function useChatSessions(
     const controller = new AbortController();
     void Promise.all(pendingAgentIds.map(async (agentId) => ({
       agentId,
-      sessions: await listSessions(agentId, controller.signal),
+      page: await listSessions(agentId, { limit: DEFAULT_PAGE_LIMIT, offset: 0 }, controller.signal),
     })))
       .then((results) => {
         if (controller.signal.aborted) return;
@@ -86,11 +92,15 @@ export function useChatSessions(
           for (const result of results) {
             next[result.agentId] = mergeSessions(
               current[result.agentId] || [],
-              result.sessions.map(fromStoredSession),
+              result.page.items.map(fromStoredSession),
             );
           }
           return next;
         });
+        setTotalByAgent((current) => ({
+          ...current,
+          ...Object.fromEntries(results.map((result) => [result.agentId, result.page.total])),
+        }));
         setLoadedScopes((current) => ({
           ...current,
           ...Object.fromEntries(pendingAgentIds.map((agentId) => [`${userId}\0${agentId}`, true])),
@@ -144,6 +154,11 @@ export function useChatSessions(
       delete next[agentId];
       return next;
     });
+    setTotalByAgent((current) => {
+      const next = { ...current };
+      delete next[agentId];
+      return next;
+    });
     setSelectedSessionByAgent((current) => {
       const next = { ...current };
       delete next[agentId];
@@ -152,6 +167,29 @@ export function useChatSessions(
     setLoadedScopes((current) => Object.fromEntries(
       Object.entries(current).filter(([scope]) => !scope.endsWith(`\0${agentId}`)),
     ));
+  };
+
+  /** Fetch the next page of persisted sessions for one agent and append it -
+   * used by the Sessions dashboard's "Load more" control. A no-op while
+   * already loading, or once every session for that agent is loaded. */
+  const loadMoreSessions = async (agentId: string) => {
+    const loaded = sessionsByAgent[agentId] || [];
+    const total = totalByAgent[agentId] ?? loaded.length;
+    if (loadingMoreAgentId || loaded.length >= total) return;
+    setLoadingMoreAgentId(agentId);
+    onError?.(null);
+    try {
+      const page = await listSessions(agentId, { limit: DEFAULT_PAGE_LIMIT, offset: loaded.length });
+      setSessionsByAgent((current) => ({
+        ...current,
+        [agentId]: mergeSessions(current[agentId] || [], page.items.map(fromStoredSession)),
+      }));
+      setTotalByAgent((current) => ({ ...current, [agentId]: page.total }));
+    } catch (reason) {
+      onError?.(getErrorMessage(reason, "Could not load more sessions."));
+    } finally {
+      setLoadingMoreAgentId((current) => current === agentId ? null : current);
+    }
   };
 
   const removeSession = async (agentId: string, sessionId: string) => {
@@ -166,6 +204,9 @@ export function useChatSessions(
         ...current,
         [agentId]: (current[agentId] || []).filter((candidate) => candidate.id !== sessionId),
       }));
+      setTotalByAgent((current) => (
+        current[agentId] === undefined ? current : { ...current, [agentId]: Math.max(0, current[agentId] - 1) }
+      ));
       setSelectedSessionByAgent((current) => current[agentId] === sessionId
         ? { ...current, [agentId]: remaining[0]?.id || "" }
         : current);
@@ -176,19 +217,54 @@ export function useChatSessions(
     }
   };
 
+  /**
+   * Wipe the current session's messages in place - same session id, same
+   * position in the sidebar list, just an empty transcript - as opposed to
+   * removeSession, which deletes the session entirely and drops it from the
+   * list. Reuses the same DELETE endpoint removeSession does (deleting a
+   * checkpoint doesn't retire its session id - the next real message simply
+   * creates a fresh checkpoint under the same id), then resets the session
+   * locally via updateSession instead of filtering it out.
+   */
+  const clearSession = async (agentId: string, sessionId: string) => {
+    const session = sessionsByAgent[agentId]?.find((candidate) => candidate.id === sessionId);
+    const deletionKey = `${agentId}:${sessionId}`;
+    setDeletingSession(deletionKey);
+    onError?.(null);
+    try {
+      if (session?.persisted !== false) await deleteSession(agentId, sessionId);
+      updateSession(agentId, sessionId, (current) => ({
+        ...current,
+        title: "New conversation",
+        messages: [],
+        persisted: false,
+        updatedAt: Date.now(),
+      }));
+    } catch (reason) {
+      onError?.(getErrorMessage(reason, "Could not clear the session."));
+    } finally {
+      setDeletingSession((current) => current === deletionKey ? null : current);
+    }
+  };
+
   const sessionCount = useMemo(
-    () => Object.values(sessionsByAgent).reduce((count, list) => count + list.length, 0),
-    [sessionsByAgent],
+    () => Object.entries(sessionsByAgent).reduce(
+      (count, [agentId, list]) => count + (totalByAgent[agentId] ?? list.length), 0,
+    ),
+    [sessionsByAgent, totalByAgent],
   );
   const sessionCounts = useMemo(
-    () => Object.fromEntries(Object.entries(sessionsByAgent).map(([agentId, list]) => [agentId, list.length])),
-    [sessionsByAgent],
+    () => Object.fromEntries(
+      Object.entries(sessionsByAgent).map(([agentId, list]) => [agentId, totalByAgent[agentId] ?? list.length]),
+    ),
+    [sessionsByAgent, totalByAgent],
   );
   const catalogLoading = prefetchAgentIds.some((agentId) => !loadedScopes[`${userId}\0${agentId}`]);
 
   return {
     sessions,
     sessionsByAgent,
+    totalByAgent,
     currentSession,
     selectedSessionId,
     sessionCount,
@@ -199,6 +275,9 @@ export function useChatSessions(
     updateSession,
     removeAgentSessions,
     removeSession,
+    clearSession,
+    loadMoreSessions,
+    loadingMoreAgentId,
     deletingSession,
     historyLoaded,
     catalogLoading,

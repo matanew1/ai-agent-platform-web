@@ -14,13 +14,16 @@ type SessionsDashboardProps = {
   connected: boolean;
   agents: Agent[];
   sessionsByAgent: Record<string, Session[]>;
+  totalByAgent: Record<string, number>;
   loading: boolean;
+  loadingMoreAgentId: string | null;
   deletingSession: string | null;
   onSignOut?: () => void;
   onNavigate: (destination: DashboardDestination) => void;
   onOpenSession: (agent: Agent, sessionId: string) => void;
   onNewSession: (agent: Agent) => void;
   onDeleteSession: (agentId: string, sessionId: string) => void;
+  onLoadMoreSessions: (agentId: string) => void;
 };
 
 export function SessionsDashboard({
@@ -28,13 +31,16 @@ export function SessionsDashboard({
   connected,
   agents,
   sessionsByAgent,
+  totalByAgent,
   loading,
+  loadingMoreAgentId,
   deletingSession,
   onSignOut,
   onNavigate,
   onOpenSession,
   onNewSession,
   onDeleteSession,
+  onLoadMoreSessions,
 }: SessionsDashboardProps) {
   const { t, locale } = useI18n();
   const [query, setQuery] = useState("");
@@ -65,9 +71,13 @@ export function SessionsDashboard({
   }, [entries, query]);
 
   const selectedAgent = agents.find((agent) => agent.id === newSessionAgentId) || null;
+  const totalSessions = agents.reduce((sum, agent) => sum + (totalByAgent[agent.id] ?? (sessionsByAgent[agent.id] || []).length), 0);
   const summary = loading
     ? t("loadingSessions")
-    : t("sessionCount", { sessions: String(entries.length), agents: String(agents.length) });
+    : t("sessionCount", { sessions: String(totalSessions), agents: String(agents.length) });
+  const agentsWithMore = agents.filter((agent) => (
+    (sessionsByAgent[agent.id] || []).length < (totalByAgent[agent.id] ?? 0)
+  ));
 
   const requestDelete = (agentId: string, session: Session) => {
     if (window.confirm(t("deleteSessionConfirm", { name: session.title }))) {
@@ -156,6 +166,20 @@ export function SessionsDashboard({
               </button>
             </article>
           ))}
+          {!query && agentsWithMore.length > 0 && (
+            <button
+              className="load-more"
+              type="button"
+              disabled={!!loadingMoreAgentId}
+              onClick={() => agentsWithMore.forEach((agent) => onLoadMoreSessions(agent.id))}
+            >
+              {loadingMoreAgentId ? t("loading") : t("loadMore", {
+                count: String(agentsWithMore.reduce((sum, agent) => (
+                  sum + (totalByAgent[agent.id] ?? 0) - (sessionsByAgent[agent.id] || []).length
+                ), 0)),
+              })}
+            </button>
+          )}
         </div>
       ) : (
         <div className="management-empty">
