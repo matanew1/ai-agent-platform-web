@@ -80,6 +80,7 @@ export function DashboardSidebar({ identity, connected, onSignOut, onNavigate, a
                   type="button"
                   aria-current={active ? "page" : undefined}
                   aria-disabled={disabled}
+                  aria-label={t(item.label)}
                   className={active ? "active" : ""}
                   title={t(item.label)}
                   onClick={() => !disabled && item.destination && onNavigate(item.destination)}

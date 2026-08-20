@@ -3,9 +3,10 @@ import { useEffect, useState } from "react";
 const STORAGE_KEY = "sidebar-collapsed";
 
 /** Whether the primary sidebar renders as an icon-only rail instead of its
- * full width, persisted across sessions. Shared between the dashboard
- * sidebar and the workspace sidebar - both render the same Brand/
- * SidebarFooter chrome, so one toggle state covers either. */
+ * full width, persisted across sessions. Every page that has a sidebar
+ * (every dashboard page and the agent workspace) renders the same
+ * DashboardSidebar component, so this one hook covers all of them - there
+ * is no separate workspace-specific sidebar left to keep in sync. */
 export function useSidebarCollapsed(): [boolean, () => void] {
   const [collapsed, setCollapsed] = useState(() => {
     if (typeof window === "undefined") return false;

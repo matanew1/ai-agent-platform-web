@@ -666,6 +666,19 @@ textarea:focus-visible {
   display: none;
 }
 
+/* With their text labels hidden, the profile-open button (avatar) and the
+   sign-out button (icon) are each narrow enough alone, but side by side in
+   a row (their default layout) they're wider than the collapsed rail's
+   content area - stack them instead. */
+.dashboard-sidebar.collapsed .sidebar-account {
+  flex-direction: column;
+  gap: var(--sp-2);
+}
+
+.dashboard-sidebar.collapsed .sidebar-account-open {
+  flex: 0 0 auto;
+}
+
 
 .dashboard-nav {
   display: flex;
@@ -774,8 +787,7 @@ textarea:focus-visible {
 
 .sidebar-account-open:hover strong { color: var(--accent); }
 
-.sidebar-account > span:not(.account-avatar),
-.sidebar-account-open > span {
+.sidebar-account-open > span:not(.account-avatar) {
   display: flex;
   min-width: 0;
   flex: 1;
@@ -811,6 +823,13 @@ textarea:focus-visible {
 
 .sidebar-account button:hover {
   color: var(--text-primary);
+}
+
+.sidebar-sign-out {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: 6px;
 }
 
 .sidebar-bottom-nav {

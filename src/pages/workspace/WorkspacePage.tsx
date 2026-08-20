@@ -51,7 +51,6 @@ type WorkspacePageProps = {
   showToolActivity: boolean;
   autoReadResponses: AppSettings["autoReadResponses"];
   sendOnEnter: AppSettings["sendOnEnter"];
-  sidebarDefaultOpen: AppSettings["sidebarDefaultOpen"];
   englishVoice: AppSettings["englishVoice"];
   hebrewVoice: AppSettings["hebrewVoice"];
   speechInputLocale: AppSettings["speechInputLocale"];

@@ -1,4 +1,4 @@
-import { Check, Languages, LifeBuoy, MenuSquare, MessageSquareText, Moon, ShieldCheck, Volume2, VolumeX } from "lucide-react";
+import { Check, Languages, LifeBuoy, MessageSquareText, Moon, ShieldCheck, Volume2, VolumeX } from "lucide-react";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 
 import { type DashboardDestination, type WorkspaceIdentity } from "../../../components/layout/DashboardSidebar";
@@ -47,9 +47,6 @@ export function SettingsDashboard({ identity, connected, settings, onChange, onR
         <SettingsCard icon={<Languages size={17} />} title={t("workspaceSettings")} description={t("workspaceDescription")}>
           <Segmented label={t("language")} value={settings.locale} values={["en", "he"]} labels={{ en: t("english"), he: t("hebrew") }} onChange={(value) => set("locale", value as Locale)} />
           <p className="settings-note">{t("hebrewHint")}</p>
-        </SettingsCard>
-        <SettingsCard icon={<MenuSquare size={17} />} title={t("navigation")} description={t("navigationDescription")}>
-          <Toggle label={t("sidebarDefaultOpen")} detail={t("sidebarDefaultOpenDetail")} enabled={settings.sidebarDefaultOpen} onChange={(value) => set("sidebarDefaultOpen", value)} />
         </SettingsCard>
         <SettingsCard icon={<ShieldCheck size={17} />} title={t("legal")} description={t("legalDescription")}>
           <nav className="settings-legal-links" aria-label={t("legal")}>
