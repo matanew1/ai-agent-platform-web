@@ -1,9 +1,12 @@
 import { type CSSProperties, FormEvent, useEffect, useState } from "react";
 import { X } from "lucide-react";
 
+import { Tooltip } from "../../../components/Tooltip";
 import { DEFAULT_PROMPT } from "../../../shared/config/constants";
+import { describeModel } from "../../models/describeModel";
 import { rangePercentage } from "../../models/range";
 import type { ModelCatalog } from "../../models/types";
+import { agentsApi } from "../api";
 import type { CreateAgentValues, Tool } from "../types";
 import { useI18n } from "../../../shared/i18n/I18nProvider";
 
@@ -44,11 +47,20 @@ export function CreateAgentModal({ tools, modelCatalog, loadingModels, onClose, 
     if (!model || !hasSelectableModels) return;
     setSaving(true);
     try {
+      // Re-fetch the registered tool list right before submitting rather than
+      // trusting the `tools` prop as of when this modal opened: the backend's
+      // registry can change while the modal is open (an MCP server coming up
+      // or dropping out between the dashboard's load and this submit), and
+      // sending a since-removed tool's name fails agent creation outright
+      // with "Unknown tool names". Refetching narrows that race to the time
+      // between this call and the POST, instead of however long the modal
+      // sat open.
+      const currentTools = await agentsApi.listTools().catch(() => tools);
       await onCreate({
         name,
         description: description.trim() || undefined,
         system_prompt: prompt,
-        allowed_tools: tools.map((tool) => tool.name),
+        allowed_tools: currentTools.map((tool) => tool.name),
         model,
         temperature,
       });
@@ -67,7 +79,7 @@ export function CreateAgentModal({ tools, modelCatalog, loadingModels, onClose, 
         <label>{t("shortDescription")}<input dir="auto" value={description} maxLength={500} onChange={(event) => setDescription(event.target.value)} placeholder={t("descriptionPlaceholder")} /></label>
         <div className="modal-runtime-grid">
           <label htmlFor="create-agent-model">
-            <span className="modal-field-heading"><span>{t("model")}</span><span className="model-provider">{loadingModels ? t("loading") : modelCatalog.provider}</span></span>
+            <span className="modal-field-heading"><span>{t("model")}{hasSelectableModels && <Tooltip text={describeModel(model, t)} label={t("model")} />}</span><span className="model-provider">{loadingModels ? t("loading") : modelCatalog.provider}</span></span>
             <span className="model-select-wrap">
               <select
                 id="create-agent-model"
@@ -77,14 +89,14 @@ export function CreateAgentModal({ tools, modelCatalog, loadingModels, onClose, 
                 onChange={(event) => setModel(event.target.value)}
               >
                 {hasSelectableModels ? modelCatalog.models.map((option) => (
-                  <option key={option.id} value={option.id}>{option.label}</option>
+                  <option key={option.id} value={option.id} title={describeModel(option.id, t)}>{option.label}</option>
                 )) : <option value="">{t("noChatModels")}</option>}
               </select>
               <span aria-hidden="true">⌄</span>
             </span>
           </label>
           <label htmlFor="create-agent-temperature">
-            {t("temperature")}
+            {t("temperature")}<Tooltip text={t("temperatureHint")} label={t("temperature")} />
             <span className="modal-temperature-control">
               <input
                 id="create-agent-temperature"

@@ -18,4 +18,10 @@ export type Tool = {
   name: string;
   description: string;
   parameters: Record<string, unknown>;
+  /** Where the tool comes from: "local" for an in-process tool, or the MCP
+   * server's name (e.g. "fetch", "tavily") for one adapted from an external
+   * server. Always present in the backend response, but treated as optional
+   * here so a client build briefly ahead of the backend degrades gracefully
+   * (everything just groups under "local"). */
+  source?: string;
 };
