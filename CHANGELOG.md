@@ -2,6 +2,26 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [0.8.0](https://github.com/matanew1/ai-agent-platform-web/compare/v0.7.0...v0.8.0) (2026-08-20)
+
+
+### Features
+
+* **agents:** tool-registry tree, model/temperature tooltips, expandable system prompt, and a stale-tools fix ([e1e83b0](https://github.com/matanew1/ai-agent-platform-web/commit/e1e83b0a9258444993c6cef6e23d54ab602e78e1))
+* **app:** wire Overview/profile routing, styling, and i18n for this batch; E2E coverage ([6f0081e](https://github.com/matanew1/ai-agent-platform-web/commit/6f0081ec3419682937ba1bb4911fc73faa568fe2))
+* **brand:** Wyrmind dragon mark, sidebar Overview entry, and a circular-avatar fix ([74369b7](https://github.com/matanew1/ai-agent-platform-web/commit/74369b71d81a341fb25fe2250dbb60e20cb91bed))
+* **chat:** clear session, session pagination, and photo/initials message avatars ([0ccd718](https://github.com/matanew1/ai-agent-platform-web/commit/0ccd71851d3f05a723422c0a78387ef43c866b50))
+* **documents:** paginate the document library with a Load more control ([078e60c](https://github.com/matanew1/ai-agent-platform-web/commit/078e60c2a1cbdc9b5202c3e7652032fced98a1be))
+* **feedback:** feedback modal, wired into Settings ([12687cd](https://github.com/matanew1/ai-agent-platform-web/commit/12687cdc05802c7dd198cc5f7b7115614e1b3419))
+* **overview:** new Overview analytics dashboard ([3fa1f74](https://github.com/matanew1/ai-agent-platform-web/commit/3fa1f74638a93c8086018a1848d745969fb9ebc4))
+* **profile:** read-only profile page, delete account, and a WorkOS-photo/initials avatar ([4034171](https://github.com/matanew1/ai-agent-platform-web/commit/40341719bb8d8b8bf009d79c97da4c76f9670ba5))
+
+
+### Bug Fixes
+
+* **documents,chat:** keep Load more available while searching a loaded page ([09d81d0](https://github.com/matanew1/ai-agent-platform-web/commit/09d81d0ba68e8901a9041187921911bf40efb5f9))
+* **documents:** avoid double-counting a new document under a stale closure ([e5736a9](https://github.com/matanew1/ai-agent-platform-web/commit/e5736a90bd85d5b7d7b246c061712f3934b98282))
+
 ## [0.7.0](https://github.com/matanew1/ai-agent-platform-web/compare/v0.6.0...v0.7.0) (2026-08-17)
 
 
