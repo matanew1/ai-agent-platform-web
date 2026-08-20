@@ -22,6 +22,7 @@ type WorkspaceSidebarProps = {
   onCreateAgent: () => void;
   onDashboard: () => void;
   onSettings: () => void;
+  onProfile: () => void;
   onSignOut?: () => void;
 };
 
@@ -33,7 +34,7 @@ export function WorkspaceSidebar(props: WorkspaceSidebarProps) {
         <button className="workspace-sidebar-brand" type="button" onClick={props.onDashboard}>
           <Brand />
         </button>
-        <small className="app-version">AI Platform v{APP_VERSION}</small>
+        <small className="app-version">Wyrmind v{APP_VERSION}</small>
       </header>
       <div className="workspace-sidebar-center">
         <div className="workspace-sidebar-section-heading">
@@ -77,7 +78,7 @@ export function WorkspaceSidebar(props: WorkspaceSidebarProps) {
           ))}
         </nav>
       </div>
-      <SidebarFooter identity={props.identity} settingsLabel={t("settings")} signOutLabel={t("signOut")} onSettings={props.onSettings} onSignOut={props.onSignOut} />
+      <SidebarFooter identity={props.identity} settingsLabel={t("settings")} signOutLabel={t("signOut")} profileLabel={t("viewProfile")} onSettings={props.onSettings} onProfile={props.onProfile} onSignOut={props.onSignOut} />
     </aside>
   );
 }
